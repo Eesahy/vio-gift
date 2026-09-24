@@ -1,0 +1,115 @@
+/* ── VioGiftStore Brand Theme ── */
+:root {
+  --vio-purple: #8f5aa8;
+  --vio-purple-dark: #673a7f;
+  --vio-light-gray: #d9b4e8;
+  --vio-cream: #faf7f0;
+  --vio-gold: #d9b4e8;
+  --vio-text-muted: #947aa1;
+  --vio-danger: #e53e3e;
+  --vio-success: #22c55e;
+  --vio-warning: #f59e0b;
+  --font-display: "Belleza", serif;
+  --font-body: "Poppins", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--vio-purple-dark);
+  background: var(--vio-cream);
+}
+
+.font-display {
+  font-family: var(--font-display) !important;
+}
+
+/* Utility classes used across views, mirroring the original Tailwind utilities */
+.text-vio-purple { color: var(--vio-purple) !important; }
+.text-vio-dark { color: var(--vio-purple-dark) !important; }
+.text-vio-gold { color: var(--vio-gold) !important; }
+.text-vio-muted { color: var(--vio-text-muted) !important; }
+.bg-vio-purple { background-color: var(--vio-purple) !important; }
+.bg-vio-cream { background-color: var(--vio-cream) !important; }
+.bg-vio-gold { background-color: var(--vio-gold) !important; }
+.border-vio { border-color: rgba(143, 90, 168, 0.18) !important; }
+
+.vio-gradient {
+  background: linear-gradient(135deg, var(--vio-purple) 0%, var(--vio-purple-dark) 100%);
+}
+
+.vio-hero-bg {
+  background: radial-gradient(circle at 20% 30%, rgba(143, 90, 168, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(217, 180, 232, 0.35) 0%, transparent 50%);
+}
+
+.vio-rounded-full {
+  border-radius: 999px !important;
+}
+
+.vio-card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.vio-card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 28px rgba(103, 58, 127, 0.18);
+}
+
+.vio-img-zoom {
+  overflow: hidden;
+}
+.vio-img-zoom img {
+  transition: transform 0.5s ease;
+}
+
+/* Fallback tint so a slow/failed image load never shows as stark blank white */
+.v-img {
+  background-color: rgba(143, 90, 168, 0.06);
+}
+.vio-img-zoom:hover img {
+  transform: scale(1.08);
+}
+
+.vio-fade-in {
+  animation: vioFadeIn 0.6s ease both;
+}
+@keyframes vioFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+@media print {
+  header,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+}
