@@ -118,6 +118,12 @@
         <v-col cols="12" lg="4">
           <v-card rounded="xl" class="pa-6 summary-sticky" flat style="border: 1px solid rgba(143,90,168,0.15)">
             <h4 class="font-display mb-4" style="color: var(--vio-purple); font-size: 1.3rem">Order Total</h4>
+            <div class="d-flex flex-column ga-3 mb-5 summary-items">
+              <div v-for="item in cart.items" :key="item.id" class="d-flex justify-space-between ga-3 text-body-2">
+                <span style="color: var(--vio-purple-dark)">{{ item.quantity }} x {{ item.name }}</span>
+                <span class="text-no-wrap" style="color: var(--vio-purple)">£{{ (item.price * item.quantity).toFixed(2) }}</span>
+              </div>
+            </div>
             <div class="d-flex flex-column ga-2 mb-5 text-body-2">
               <div class="d-flex justify-space-between">
                 <span style="color: var(--vio-purple-dark)">Items</span>
@@ -147,7 +153,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from "vue";
+import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import SimpleHeader from "@/components/SimpleHeader.vue";
 import { useCartStore } from "@/store/cart";
@@ -158,7 +164,7 @@ const cart = useCartStore();
 const tab = ref("delivery");
 const payMethod = ref("card");
 const isProcessing = ref(false);
-const cartTotal = ref(cart.cartTotal || 85);
+const cartTotal = computed(() => cart.cartTotal || cart.subtotal);
 
 const pickupTimes = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 const bankDetails = [
@@ -201,7 +207,20 @@ function handlePay() {
   if (!validate()) return;
   isProcessing.value = true;
   setTimeout(() => {
-    cart.setOrderDetails({ ...form, total: cartTotal.value, tab: tab.value });
+    cart.setOrderDetails({
+      ...form,
+      total: cartTotal.value,
+      subtotal: cart.subtotal,
+      itemCount: cart.itemCount,
+      items: cart.items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+      fulfillmentMethod: tab.value === "pickup" ? "Pickup" : "Delivery",
+      tab: tab.value,
+    });
     router.push("/order-complete");
   }, 2200);
 }
@@ -221,4 +240,5 @@ function handlePay() {
   background-color: var(--vio-purple); color: #faf7f0;
 }
 .summary-sticky { position: sticky; top: 96px; }
+.summary-items { border-bottom: 1px solid rgba(143,90,168,0.15); padding-bottom: 20px; }
 </style>

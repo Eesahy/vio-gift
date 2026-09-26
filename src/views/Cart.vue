@@ -127,6 +127,12 @@
         <v-col cols="12" lg="4">
           <v-card rounded="xl" class="pa-6 summary-sticky" flat style="border: 1px solid rgba(143,90,168,0.15)">
             <h4 class="font-display mb-5" style="color: var(--vio-purple); font-size: 1.3rem">Order Summary</h4>
+            <div class="d-flex flex-column ga-3 mb-5 summary-items">
+              <div v-for="item in cart.items" :key="item.id" class="d-flex justify-space-between ga-3 text-body-2">
+                <span style="color: var(--vio-purple-dark)">{{ item.quantity }} x {{ item.name }}</span>
+                <span class="text-no-wrap" style="color: var(--vio-purple)">£{{ (item.price * item.quantity).toFixed(2) }}</span>
+              </div>
+            </div>
             <div class="d-flex flex-column ga-3 mb-5">
               <div class="d-flex justify-space-between text-body-2">
                 <span style="color: var(--vio-purple-dark)">Subtotal</span>
@@ -214,4 +220,5 @@ function handleCheckout() {
 }
 .qty-value { width: 16px; text-align: center; color: var(--vio-purple); font-size: 0.9rem; }
 .summary-sticky { position: sticky; top: 96px; }
+.summary-items { border-bottom: 1px solid rgba(143,90,168,0.15); padding-bottom: 20px; }
 </style>

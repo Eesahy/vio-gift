@@ -62,12 +62,14 @@
 
           <v-divider class="my-6" />
 
-          <p class="text-caption text-uppercase mb-3" style="color: var(--vio-text-muted)">Items Ordered</p>
+          <p class="text-caption text-uppercase mb-3" style="color: var(--vio-text-muted)">
+            Items Ordered ({{ order?.itemCount || 0 }} {{ order?.itemCount === 1 ? "item" : "items" }})
+          </p>
           <div class="rounded-lg overflow-hidden" style="border: 1px solid rgba(143,90,168,0.12)">
-            <div class="px-5 py-3" style="background-color: var(--vio-cream)">
+            <div v-for="(item, index) in order?.items || []" :key="item.id" class="px-5 py-3" :style="{ backgroundColor: index % 2 === 0 ? 'var(--vio-cream)' : '#fff' }">
               <div class="d-flex justify-space-between text-body-2" style="color: var(--vio-purple)">
-                <span>Wellness Gift Packages</span>
-                <span class="font-display">£{{ cartTotal.toFixed(2) }}</span>
+                <span>{{ item.quantity }} x {{ item.name }}</span>
+                <span class="font-display">£{{ (item.price * item.quantity).toFixed(2) }}</span>
               </div>
             </div>
           </div>
@@ -75,10 +77,10 @@
           <div class="d-flex flex-column ga-2 mt-6">
             <div class="d-flex justify-space-between text-body-2">
               <span style="color: var(--vio-purple-dark)">Subtotal</span>
-              <span style="color: var(--vio-purple)">£{{ cartTotal.toFixed(2) }}</span>
+              <span style="color: var(--vio-purple)">£{{ order?.subtotal?.toFixed(2) || cartTotal.toFixed(2) }}</span>
             </div>
             <div class="d-flex justify-space-between text-body-2">
-              <span style="color: var(--vio-purple-dark)">Delivery / Pickup</span>
+              <span style="color: var(--vio-purple-dark)">{{ order?.fulfillmentMethod || "Delivery" }}</span>
               <span style="color: var(--vio-success)">Included</span>
             </div>
             <div class="d-flex justify-space-between pt-3" style="border-top: 1px solid rgba(143,90,168,0.15)">
