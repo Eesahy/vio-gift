@@ -1,9 +1,13 @@
 <template>
   <div class="min-h-screen bg-white">
-    <header class="py-5 text-center" style="border-bottom: 1px solid rgba(143,90,168,0.15)">
-      <router-link to="/">
-        <h1 class="font-display" style="color: var(--vio-purple); font-size: 1.6rem">VioGiftStore</h1>
-      </router-link>
+    <header class="py-5" style="border-bottom: 1px solid rgba(46,27,48,0.15)">
+      <v-container class="d-flex">
+        <router-link to="/" aria-label="VioGiftStore — home">
+          <span class="logo-badge">
+            <img src="/logo.jpg" alt="VioGiftStore" />
+          </span>
+        </router-link>
+      </v-container>
     </header>
 
     <v-container class="py-16" style="max-width: 780px">
@@ -65,11 +69,11 @@
           <p class="text-caption text-uppercase mb-3" style="color: var(--vio-text-muted)">
             Items Ordered ({{ order?.itemCount || 0 }} {{ order?.itemCount === 1 ? "item" : "items" }})
           </p>
-          <div class="rounded-lg overflow-hidden" style="border: 1px solid rgba(143,90,168,0.12)">
+          <div class="rounded-lg overflow-hidden" style="border: 1px solid rgba(46,27,48,0.12)">
             <div v-for="(item, index) in order?.items || []" :key="item.id" class="px-5 py-3" :style="{ backgroundColor: index % 2 === 0 ? 'var(--vio-cream)' : '#fff' }">
               <div class="d-flex justify-space-between text-body-2" style="color: var(--vio-purple)">
                 <span>{{ item.quantity }} x {{ item.name }}</span>
-                <span class="font-display">£{{ (item.price * item.quantity).toFixed(2) }}</span>
+                <span class="font-display">₦{{ (item.price * item.quantity).toFixed(2) }}</span>
               </div>
             </div>
           </div>
@@ -77,15 +81,15 @@
           <div class="d-flex flex-column ga-2 mt-6">
             <div class="d-flex justify-space-between text-body-2">
               <span style="color: var(--vio-purple-dark)">Subtotal</span>
-              <span style="color: var(--vio-purple)">£{{ order?.subtotal?.toFixed(2) || cartTotal.toFixed(2) }}</span>
+              <span style="color: var(--vio-purple)">₦{{ order?.subtotal?.toFixed(2) || cartTotal.toFixed(2) }}</span>
             </div>
             <div class="d-flex justify-space-between text-body-2">
               <span style="color: var(--vio-purple-dark)">{{ order?.fulfillmentMethod || "Delivery" }}</span>
               <span style="color: var(--vio-success)">Included</span>
             </div>
-            <div class="d-flex justify-space-between pt-3" style="border-top: 1px solid rgba(143,90,168,0.15)">
+            <div class="d-flex justify-space-between pt-3" style="border-top: 1px solid rgba(46,27,48,0.15)">
               <span class="font-display" style="color: var(--vio-purple); font-size: 1.2rem">Total Paid</span>
-              <span class="font-display" style="color: var(--vio-purple); font-size: 1.5rem">£{{ cartTotal.toFixed(2) }}</span>
+              <span class="font-display" style="color: var(--vio-purple); font-size: 1.5rem">₦{{ cartTotal.toFixed(2) }}</span>
             </div>
           </div>
         </div>
@@ -137,9 +141,15 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.logo-badge {
+  display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 999px; background: #fff;
+  box-shadow: 0 2px 10px rgba(46, 27, 48, 0.18); overflow: hidden;
+}
+.logo-badge img { width: 84%; height: 84%; object-fit: contain; }
 .success-circle {
   width: 96px; height: 96px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
-  background-color: var(--vio-purple); box-shadow: 0 8px 24px rgba(143,90,168,0.4);
+  background-color: var(--vio-purple); box-shadow: 0 8px 24px rgba(46,27,48,0.4);
 }
 .continue-btn {
   display: inline-flex; align-items: center; justify-content: center; padding: 12px 28px;

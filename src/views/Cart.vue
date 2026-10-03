@@ -10,7 +10,7 @@
       </h2>
 
       <div v-if="cart.items.length === 0" class="text-center py-16">
-        <v-icon icon="mdi-shopping-outline" size="64" style="color: rgba(143,90,168,0.4)" class="mb-4" />
+        <v-icon icon="mdi-shopping-outline" size="64" style="color: rgba(46,27,48,0.4)" class="mb-4" />
         <p class="text-h6 mb-6" style="color: var(--vio-purple-dark)">Your cart is empty</p>
         <router-link to="/" class="hero-btn-solid">Start Shopping</router-link>
       </div>
@@ -18,8 +18,8 @@
       <v-row v-else>
         <!-- LEFT -->
         <v-col cols="12" lg="8" class="d-flex flex-column ga-6">
-          <v-card rounded="xl" border flat style="border-color: rgba(143,90,168,0.15) !important">
-            <div v-for="(item, idx) in cart.items" :key="item.id" class="d-flex ga-4 pa-5" :style="idx < cart.items.length - 1 ? 'border-bottom: 1px solid rgba(143,90,168,0.12)' : ''">
+          <v-card rounded="xl" border flat style="border-color: rgba(46,27,48,0.15) !important">
+            <div v-for="(item, idx) in cart.items" :key="item.id" class="d-flex ga-4 pa-5" :style="idx < cart.items.length - 1 ? 'border-bottom: 1px solid rgba(46,27,48,0.12)' : ''">
               <v-img :src="item.image" :alt="item.name" width="96" height="96" cover rounded="lg" class="flex-shrink-0" />
               <div class="flex-grow-1">
                 <div class="d-flex justify-space-between align-start mb-1">
@@ -34,7 +34,7 @@
                     <button class="qty-btn" @click="cart.updateQty(item.id, 1)"><v-icon icon="mdi-plus" size="14" /></button>
                   </div>
                   <span class="font-display" style="color: var(--vio-purple); font-size: 1.1rem">
-                    £{{ (item.price * item.quantity).toFixed(2) }}
+                    ₦{{ (item.price * item.quantity).toFixed(2) }}
                   </span>
                 </div>
               </div>
@@ -42,15 +42,15 @@
           </v-card>
 
           <!-- Upsell -->
-          <v-card rounded="xl" class="pa-6" flat style="background-color: var(--vio-cream); border: 1px solid rgba(143,90,168,0.15)">
+          <v-card rounded="xl" class="pa-6" flat style="background-color: var(--vio-cream); border: 1px solid rgba(46,27,48,0.15)">
             <h4 class="font-display mb-4" style="color: var(--vio-purple)">Customers also love</h4>
             <v-row dense>
               <v-col v-for="p in upsellItems" :key="p.id" cols="4">
-                <v-card rounded="lg" border flat style="border-color: rgba(143,90,168,0.12) !important">
+                <v-card rounded="lg" border flat style="border-color: rgba(46,27,48,0.12) !important">
                   <v-img :src="p.image" :alt="p.name" aspect-ratio="1" cover />
                   <div class="pa-3">
                     <p class="text-caption line-clamp-1 mb-1" style="color: var(--vio-purple); font-family: Belleza, serif">{{ p.name }}</p>
-                    <p class="text-body-2 mb-2" style="color: var(--vio-purple)">£{{ p.price }}</p>
+                    <p class="text-body-2 mb-2" style="color: var(--vio-purple)">₦{{ p.price }}</p>
                     <v-btn block size="small" color="primary" class="text-none" @click="addUpsell(p)">+ Add</v-btn>
                   </div>
                 </v-card>
@@ -59,7 +59,7 @@
           </v-card>
 
           <!-- Order note -->
-          <v-card rounded="xl" class="pa-6" flat style="border: 1px solid rgba(143,90,168,0.15)">
+          <v-card rounded="xl" class="pa-6" flat style="border: 1px solid rgba(46,27,48,0.15)">
             <h4 class="font-display mb-3 d-flex align-center ga-2" style="color: var(--vio-purple)">
               <v-icon icon="mdi-message-text-outline" />
               Additional Order Note
@@ -74,7 +74,7 @@
           </v-card>
 
           <!-- Gift extras -->
-          <v-card rounded="xl" class="pa-6" flat style="border: 1px solid rgba(143,90,168,0.15)">
+          <v-card rounded="xl" class="pa-6" flat style="border: 1px solid rgba(46,27,48,0.15)">
             <v-checkbox v-model="addGiftExtras" hide-details class="mb-2">
               <template #label>
                 <span class="font-display d-flex align-center ga-2" style="color: var(--vio-purple)">
@@ -93,12 +93,12 @@
                       variant="outlined" rounded="lg" prepend-icon="mdi-package-variant-closed"
                       :color="giftOption === 'bag' ? 'primary' : undefined"
                       @click="giftOption = giftOption === 'bag' ? '' : 'bag'"
-                    >Gift Bag (+£5)</v-btn>
+                    >Gift Bag (+₦5)</v-btn>
                     <v-btn
                       variant="outlined" rounded="lg" prepend-icon="mdi-gift-outline"
                       :color="giftOption === 'wrap' ? 'primary' : undefined"
                       @click="giftOption = giftOption === 'wrap' ? '' : 'wrap'"
-                    >Gift Wrap (+£3)</v-btn>
+                    >Gift Wrap (+₦3)</v-btn>
                   </div>
                 </div>
 
@@ -125,30 +125,30 @@
 
         <!-- RIGHT: Summary -->
         <v-col cols="12" lg="4">
-          <v-card rounded="xl" class="pa-6 summary-sticky" flat style="border: 1px solid rgba(143,90,168,0.15)">
+          <v-card rounded="xl" class="pa-6 summary-sticky" flat style="border: 1px solid rgba(46,27,48,0.15)">
             <h4 class="font-display mb-5" style="color: var(--vio-purple); font-size: 1.3rem">Order Summary</h4>
             <div class="d-flex flex-column ga-3 mb-5 summary-items">
               <div v-for="item in cart.items" :key="item.id" class="d-flex justify-space-between ga-3 text-body-2">
                 <span style="color: var(--vio-purple-dark)">{{ item.quantity }} x {{ item.name }}</span>
-                <span class="text-no-wrap" style="color: var(--vio-purple)">£{{ (item.price * item.quantity).toFixed(2) }}</span>
+                <span class="text-no-wrap" style="color: var(--vio-purple)">₦{{ (item.price * item.quantity).toFixed(2) }}</span>
               </div>
             </div>
             <div class="d-flex flex-column ga-3 mb-5">
               <div class="d-flex justify-space-between text-body-2">
                 <span style="color: var(--vio-purple-dark)">Subtotal</span>
-                <span style="color: var(--vio-purple)">£{{ cart.subtotal.toFixed(2) }}</span>
+                <span style="color: var(--vio-purple)">₦{{ cart.subtotal.toFixed(2) }}</span>
               </div>
               <div v-if="giftExtra > 0" class="d-flex justify-space-between text-body-2">
                 <span style="color: var(--vio-purple-dark)">Gift {{ giftOption === "bag" ? "Bag" : "Wrap" }}</span>
-                <span style="color: var(--vio-purple)">£{{ giftExtra.toFixed(2) }}</span>
+                <span style="color: var(--vio-purple)">₦{{ giftExtra.toFixed(2) }}</span>
               </div>
               <div class="d-flex justify-space-between text-body-2">
                 <span style="color: var(--vio-purple-dark)">Delivery</span>
                 <span style="color: var(--vio-success)">Calculated at checkout</span>
               </div>
-              <div class="d-flex justify-space-between pt-3" style="border-top: 1px solid rgba(143,90,168,0.15)">
+              <div class="d-flex justify-space-between pt-3" style="border-top: 1px solid rgba(46,27,48,0.15)">
                 <span class="font-display" style="color: var(--vio-purple)">Total</span>
-                <span class="font-display" style="color: var(--vio-purple); font-size: 1.5rem">£{{ total.toFixed(2) }}</span>
+                <span class="font-display" style="color: var(--vio-purple); font-size: 1.5rem">₦{{ total.toFixed(2) }}</span>
               </div>
             </div>
 
@@ -212,7 +212,7 @@ function handleCheckout() {
   background-color: var(--vio-purple); color: var(--vio-cream); font-family: "Belleza", serif;
 }
 .qty-selector {
-  display: inline-flex; align-items: center; gap: 12px; border: 1px solid rgba(143,90,168,0.3); border-radius: 999px; padding: 0 4px;
+  display: inline-flex; align-items: center; gap: 12px; border: 1px solid rgba(46,27,48,0.3); border-radius: 999px; padding: 0 4px;
 }
 .qty-btn {
   width: 32px; height: 32px; border-radius: 999px; border: none; background: none; cursor: pointer;
@@ -220,5 +220,5 @@ function handleCheckout() {
 }
 .qty-value { width: 16px; text-align: center; color: var(--vio-purple); font-size: 0.9rem; }
 .summary-sticky { position: sticky; top: 96px; }
-.summary-items { border-bottom: 1px solid rgba(143,90,168,0.15); padding-bottom: 20px; }
+.summary-items { border-bottom: 1px solid rgba(46,27,48,0.15); padding-bottom: 20px; }
 </style>

@@ -8,15 +8,15 @@
     </SimpleHeader>
 
     <!-- Progress -->
-    <div class="py-4" style="border-bottom: 1px solid rgba(143,90,168,0.1)">
+    <div class="py-4" style="border-bottom: 1px solid rgba(46,27,48,0.1)">
       <v-container class="d-flex justify-center align-center ga-2">
         <div v-for="(step, i) in ['Cart', 'Checkout', 'Order Confirmed']" :key="step" class="d-flex align-center ga-2">
-          <div class="step-circle" :style="{ backgroundColor: i <= 1 ? 'var(--vio-purple)' : 'rgba(217,180,232,0.4)', color: i <= 1 ? '#faf7f0' : 'var(--vio-purple)' }">
+          <div class="step-circle" :style="{ backgroundColor: i <= 1 ? 'var(--vio-purple)' : 'rgba(185,156,194,0.4)', color: i <= 1 ? '#faf7f0' : 'var(--vio-purple)' }">
             <v-icon v-if="i < 1" icon="mdi-check" size="12" />
             <span v-else>{{ i + 1 }}</span>
           </div>
           <span class="text-caption" :style="{ color: i <= 1 ? 'var(--vio-purple)' : 'var(--vio-text-muted)' }">{{ step }}</span>
-          <div v-if="i < 2" style="width: 32px; height: 1px; background-color: rgba(143,90,168,0.25)" />
+          <div v-if="i < 2" style="width: 32px; height: 1px; background-color: rgba(46,27,48,0.25)" />
         </div>
       </v-container>
     </div>
@@ -116,31 +116,31 @@
 
         <!-- RIGHT: Summary -->
         <v-col cols="12" lg="4">
-          <v-card rounded="xl" class="pa-6 summary-sticky" flat style="border: 1px solid rgba(143,90,168,0.15)">
+          <v-card rounded="xl" class="pa-6 summary-sticky" flat style="border: 1px solid rgba(46,27,48,0.15)">
             <h4 class="font-display mb-4" style="color: var(--vio-purple); font-size: 1.3rem">Order Total</h4>
             <div class="d-flex flex-column ga-3 mb-5 summary-items">
               <div v-for="item in cart.items" :key="item.id" class="d-flex justify-space-between ga-3 text-body-2">
                 <span style="color: var(--vio-purple-dark)">{{ item.quantity }} x {{ item.name }}</span>
-                <span class="text-no-wrap" style="color: var(--vio-purple)">£{{ (item.price * item.quantity).toFixed(2) }}</span>
+                <span class="text-no-wrap" style="color: var(--vio-purple)">₦{{ (item.price * item.quantity).toFixed(2) }}</span>
               </div>
             </div>
             <div class="d-flex flex-column ga-2 mb-5 text-body-2">
               <div class="d-flex justify-space-between">
                 <span style="color: var(--vio-purple-dark)">Items</span>
-                <span style="color: var(--vio-purple)">£{{ cartTotal.toFixed(2) }}</span>
+                <span style="color: var(--vio-purple)">₦{{ cartTotal.toFixed(2) }}</span>
               </div>
               <div class="d-flex justify-space-between">
                 <span style="color: var(--vio-purple-dark)">{{ tab === "pickup" ? "Pickup" : "Delivery" }}</span>
                 <span style="color: var(--vio-success)">{{ tab === "pickup" ? "Free" : "TBC" }}</span>
               </div>
-              <div class="d-flex justify-space-between pt-3" style="border-top: 1px solid rgba(143,90,168,0.15)">
+              <div class="d-flex justify-space-between pt-3" style="border-top: 1px solid rgba(46,27,48,0.15)">
                 <span class="font-display" style="color: var(--vio-purple)">Total</span>
-                <span class="font-display" style="color: var(--vio-purple); font-size: 1.5rem">£{{ cartTotal.toFixed(2) }}</span>
+                <span class="font-display" style="color: var(--vio-purple); font-size: 1.5rem">₦{{ cartTotal.toFixed(2) }}</span>
               </div>
             </div>
 
             <v-btn block size="x-large" color="primary" rounded="lg" class="text-none" :loading="isProcessing" prepend-icon="mdi-lock-outline" @click="handlePay">
-              {{ isProcessing ? "Processing..." : `Pay Now — £${cartTotal.toFixed(2)}` }}
+              {{ isProcessing ? "Processing..." : `Pay Now — ₦${cartTotal.toFixed(2)}` }}
             </v-btn>
             <p class="text-caption text-center mt-4" style="color: var(--vio-text-muted)">
               Encrypted &amp; secure. We never store your card details.
@@ -231,7 +231,7 @@ function handlePay() {
   width: 24px; height: 24px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 11px;
 }
 .tab-toggle {
-  display: flex; border-radius: 16px; overflow: hidden; border: 1px solid rgba(143,90,168,0.25);
+  display: flex; border-radius: 16px; overflow: hidden; border: 1px solid rgba(46,27,48,0.25);
 }
 .tab-btn {
   flex: 1; padding: 12px; font-size: 0.9rem; background: white; color: var(--vio-purple); border: none; cursor: pointer; transition: all 0.2s;
@@ -240,5 +240,5 @@ function handlePay() {
   background-color: var(--vio-purple); color: #faf7f0;
 }
 .summary-sticky { position: sticky; top: 96px; }
-.summary-items { border-bottom: 1px solid rgba(143,90,168,0.15); padding-bottom: 20px; }
+.summary-items { border-bottom: 1px solid rgba(46,27,48,0.15); padding-bottom: 20px; }
 </style>

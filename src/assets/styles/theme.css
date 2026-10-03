@@ -1,11 +1,13 @@
 /* ── VioGiftStore Brand Theme ── */
 :root {
-  --vio-purple: #8f5aa8;
-  --vio-purple-dark: #673a7f;
-  --vio-light-gray: #d9b4e8;
+  --vio-purple: #3f214d;
+  --vio-light-purple: #d9b4e8;
+  --vio-gray: #8d8890;
+  --vio-light-gray: #ece9ec;
   --vio-cream: #faf7f0;
-  --vio-gold: #d9b4e8;
-  --vio-text-muted: #947aa1;
+  --vio-gold: #c8a96a;
+  --vio-purple-dark: #655e6c;
+  --vio-text-muted: #8d8890;
   --vio-danger: #e53e3e;
   --vio-success: #22c55e;
   --vio-warning: #f59e0b;
@@ -34,12 +36,37 @@ body {
   font-family: var(--font-display) !important;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--vio-purple) !important;
+}
+
+footer h1,
+footer h2,
+footer h3,
+footer h4,
+footer h5,
+footer h6,
+.vio-gradient h1,
+.vio-gradient h2,
+.vio-gradient h3,
+.vio-gradient h4,
+.vio-gradient h5,
+.vio-gradient h6 {
+  color: var(--vio-cream) !important;
+}
+
 /* Utility classes used across views, mirroring the original Tailwind utilities */
 .text-vio-purple { color: var(--vio-purple) !important; }
 .text-vio-dark { color: var(--vio-purple-dark) !important; }
 .text-vio-gold { color: var(--vio-gold) !important; }
 .text-vio-muted { color: var(--vio-text-muted) !important; }
 .bg-vio-purple { background-color: var(--vio-purple) !important; }
+.bg-vio-light-purple { background-color: var(--vio-light-purple) !important; }
 .bg-vio-cream { background-color: var(--vio-cream) !important; }
 .bg-vio-gold { background-color: var(--vio-gold) !important; }
 .border-vio { border-color: rgba(143, 90, 168, 0.18) !important; }

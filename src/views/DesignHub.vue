@@ -128,8 +128,11 @@ const quickNav = [
 
 const palette = [
   { name: "Primary Purple", hex: "#8f5aa8" },
-  { name: "Cream", hex: "#faf7f0" },
   { name: "Secondary Lilac", hex: "#d9b4e8" },
+  { name: "Warm Cream", hex: "#faf7f0" },
+  { name: "Gray", hex: "#8d8890" },
+  { name: "Light Gray", hex: "#ece9ec" },
+  { name: "Gold", hex: "#c8a96a" },
 ];
 
 const labelProducts = [

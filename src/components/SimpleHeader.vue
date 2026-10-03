@@ -4,7 +4,7 @@
     :class="sticky ? 'header-sticky' : ''"
     :style="variant === 'purple'
       ? { backgroundColor: 'var(--vio-purple)' }
-      : { backgroundColor: '#faf7f0', borderBottom: '1px solid rgba(143,90,168,0.15)' }"
+      : { backgroundColor: 'var(--vio-cream)', borderBottom: '1px solid var(--vio-border-soft)' }"
   >
     <v-container class="d-flex align-center justify-space-between" style="position: relative">
       <component
@@ -18,14 +18,10 @@
         <span class="text-body-2">{{ backLabel }}</span>
       </component>
 
-      <router-link to="/" class="header-logo">
-        <h1
-          class="font-display ma-0"
-          style="font-size: 1.6rem"
-          :style="{ color: variant === 'purple' ? '#faf7f0' : 'var(--vio-purple)' }"
-        >
-          VioGiftStore
-        </h1>
+      <router-link to="/" class="header-logo" aria-label="VioGiftStore — home">
+        <span class="logo-badge">
+          <img src="/logo.jpg" alt="VioGiftStore" />
+        </span>
       </router-link>
 
       <div class="header-right"><slot name="right" /></div>
@@ -64,6 +60,22 @@ defineEmits(["back"]);
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+}
+.logo-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(46, 27, 48, 0.18);
+  overflow: hidden;
+}
+.logo-badge img {
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
 }
 .header-right {
   min-width: 40px;

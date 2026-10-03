@@ -45,10 +45,10 @@
 
         <div class="d-flex align-center justify-space-between">
           <div class="d-flex">
-            <v-icon v-for="i in 5" :key="i" icon="mdi-star" size="14" color="secondary" />
+            <v-icon v-for="i in 5" :key="i" icon="mdi-star" size="14" color="gold" />
           </div>
           <span class="font-display" style="color: var(--vio-purple); font-size: 1.3rem">
-            £{{ product.price }}
+            ₦{{ product.price }}
           </span>
         </div>
 

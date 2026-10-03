@@ -57,9 +57,9 @@
               <div>
                 <p class="text-caption text-uppercase mb-2" style="color: var(--vio-purple-dark)">Price Range</p>
                 <div class="d-flex align-center ga-3">
-                  <span class="text-body-2" style="color: var(--vio-purple)">£0</span>
+                  <span class="text-body-2" style="color: var(--vio-purple)">₦0</span>
                   <v-slider v-model="priceMax" :min="0" :max="200" hide-details style="width: 160px" color="primary" />
-                  <span class="text-body-2" style="color: var(--vio-purple)">£{{ priceMax }}</span>
+                  <span class="text-body-2" style="color: var(--vio-purple)">₦{{ priceMax }}</span>
                 </div>
               </div>
               <div>

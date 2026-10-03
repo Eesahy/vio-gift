@@ -3,18 +3,20 @@
     <!-- HEADER -->
     <header class="header-sticky bg-white" style="border-bottom: 1px solid rgba(143,90,168,0.15)">
       <v-container>
-        <div class="d-flex align-center justify-space-between" style="height: 80px; position: relative">
-          <nav class="d-none d-md-flex align-center ga-6">
-            <router-link to="/catalogue" class="nav-link">Shop All</router-link>
-            <router-link to="/corporate" class="nav-link">Corporate</router-link>
-            <router-link to="/price-list" class="nav-link">Custom Orders</router-link>
-          </nav>
+        <div class="d-flex align-center justify-space-between" style="height: 80px">
+          <div class="d-flex align-center ga-8">
+            <router-link to="/" class="d-flex align-center" aria-label="VioGiftStore — home">
+              <span class="logo-badge">
+                <img src="/logo.jpg" alt="VioGiftStore" />
+              </span>
+            </router-link>
 
-          <router-link to="/" class="header-logo">
-            <h1 class="font-display ma-0" style="color: var(--vio-purple); font-size: 2rem">
-              VioGiftStore
-            </h1>
-          </router-link>
+            <nav class="d-none d-md-flex align-center ga-6">
+              <router-link to="/catalogue" class="nav-link">Shop All</router-link>
+              <router-link to="/corporate" class="nav-link">Corporate</router-link>
+              <router-link to="/price-list" class="nav-link">Custom Orders</router-link>
+            </nav>
+          </div>
 
           <div class="d-none d-md-flex align-center ga-4">
             <router-link to="/cart" class="icon-link" aria-label="Cart">
@@ -31,7 +33,7 @@
             icon
             variant="text"
             class="d-md-none"
-            style="color: var(--vio-purple); margin-left: auto"
+            style="color: var(--vio-purple)"
             @click="mobileMenuOpen = !mobileMenuOpen"
           >
             <v-icon :icon="mobileMenuOpen ? 'mdi-close' : 'mdi-menu'" />
@@ -63,18 +65,18 @@
       <v-container class="text-center" style="max-width: 900px">
         <div class="vio-fade-in">
           <div class="d-flex align-center justify-center ga-2 mb-6">
-            <v-icon icon="mdi-creation" size="16" color="secondary" />
-            <span class="text-caption text-uppercase" style="letter-spacing: 0.15em; color: var(--vio-purple)">
+            <v-icon icon="mdi-creation" size="16" color="gold" />
+            <span class="text-caption text-uppercase" style="letter-spacing: 0.15em; color: var(--vio-gold)">
               Premium Sustainable Gifting
             </span>
-            <v-icon icon="mdi-creation" size="16" color="secondary" />
+            <v-icon icon="mdi-creation" size="16" color="gold" />
           </div>
 
           <h2 class="font-display hero-title mb-6" style="color: var(--vio-purple)">
             Turning Simple Moments<br />into Beautiful Memories
           </h2>
 
-          <p class="mb-10 mx-auto" style="max-width: 640px; font-size: 1.15rem; line-height: 1.7; color: var(--vio-purple-dark)">
+          <p class="mb-10 mx-auto" style="max-width: 640px; font-size: 1.15rem; line-height: 1.7; color: var(--vio-gold)">
             View our range of items featuring premium wellness products like our herbal tea,
             organic honey, artisanal incense, and healthy snacks. Each package curated with care
             for those who matter the most.
@@ -164,7 +166,7 @@
       <v-container>
         <div class="text-center mb-12">
           <h3 class="font-display mb-3" style="color: var(--vio-purple); font-size: 2.75rem">Choose Your Theme</h3>
-          <p style="font-size: 1.1rem; color: var(--vio-purple-dark)">Curated collections for every cherished relationship</p>
+          <p style="font-size: 1.1rem; color: var(--vio-gold)">Curated collections for every cherished relationship</p>
         </div>
 
         <v-row dense>
@@ -176,7 +178,7 @@
                 </div>
                 <div class="pa-3 text-center">
                   <p class="font-display mb-0" style="color: var(--vio-purple)">{{ theme.name }}</p>
-                  <p class="text-caption" style="color: var(--vio-text-muted)">{{ theme.description }}</p>
+                  <p class="text-caption" style="color: var(--vio-gold)">{{ theme.description }}</p>
                 </div>
               </v-card>
             </router-link>
@@ -190,11 +192,11 @@
       <v-container>
         <div class="text-center mb-12">
           <div class="d-flex align-center justify-center ga-3 mb-3">
-            <v-icon icon="mdi-creation" size="20" color="secondary" />
+            <v-icon icon="mdi-creation" size="20" color="gold" />
             <h3 class="font-display" style="color: var(--vio-purple); font-size: 2.75rem">Choose Your Occasion</h3>
-            <v-icon icon="mdi-creation" size="20" color="secondary" />
+            <v-icon icon="mdi-creation" size="20" color="gold" />
           </div>
-          <p class="font-italic" style="font-size: 1.1rem; color: var(--vio-purple-dark)">
+          <p class="font-italic" style="font-size: 1.1rem; color: var(--vio-gold)">
             Sacred celebrations deserving of thoughtful, meaningful gifts
           </p>
         </div>
@@ -208,7 +210,7 @@
                 </div>
                 <div class="pa-3 text-center">
                   <p class="font-display mb-0" style="color: var(--vio-purple)">{{ occ.name }}</p>
-                  <p class="text-caption" style="color: var(--vio-text-muted)">{{ occ.description }}</p>
+                  <p class="text-caption" style="color: var(--vio-gold)">{{ occ.description }}</p>
                 </div>
               </v-card>
             </router-link>
@@ -230,7 +232,7 @@
                 <v-icon :icon="item.icon" size="30" color="white" />
               </div>
               <h4 class="font-display mb-2" style="color: var(--vio-purple); font-size: 1.3rem">{{ item.title }}</h4>
-              <p class="text-body-2" style="color: var(--vio-purple-dark); line-height: 1.6">{{ item.desc }}</p>
+              <p class="text-body-2" style="color: var(--vio-gold); line-height: 1.6">{{ item.desc }}</p>
             </div>
           </v-col>
         </v-row>
@@ -243,16 +245,16 @@
         <div class="text-center mb-12">
           <h3 class="font-display mb-3" style="color: var(--vio-purple); font-size: 2.25rem">What Our Customers Say</h3>
           <div class="d-flex justify-center ga-1 mb-2">
-            <v-icon v-for="i in 5" :key="i" icon="mdi-star" size="20" color="secondary" />
+            <v-icon v-for="i in 5" :key="i" icon="mdi-star" size="20" color="gold" />
           </div>
-          <p class="text-body-2" style="color: var(--vio-purple-dark)">Rated 5 stars by hundreds of happy customers</p>
+          <p class="text-body-2" style="color: var(--vio-gold)">Rated 5 stars by hundreds of happy customers</p>
         </div>
 
         <v-row style="max-width: 1200px; margin: 0 auto">
           <v-col v-for="review in reviews" :key="review.name" cols="12" md="6" lg="4">
             <v-card class="pa-6 h-100" rounded="lg" flat style="border: 1px solid rgba(143,90,168,0.15)">
               <div class="d-flex ga-1 mb-3">
-                <v-icon v-for="i in review.rating" :key="i" icon="mdi-star" size="16" color="secondary" />
+                <v-icon v-for="i in review.rating" :key="i" icon="mdi-star" size="16" color="gold" />
               </div>
               <p class="text-body-2 mb-4" style="color: var(--vio-purple-dark); line-height: 1.6">"{{ review.text }}"</p>
               <div class="d-flex align-center ga-3">
@@ -275,7 +277,9 @@
       <v-container class="py-16">
         <v-row class="mb-8">
           <v-col cols="12" md="6">
-            <h4 class="font-display mb-3" style="color: #faf7f0; font-size: 1.8rem">VioGiftStore</h4>
+            <span class="logo-badge logo-badge--footer mb-4">
+              <img src="/logo.jpg" alt="VioGiftStore" />
+            </span>
             <p class="text-body-2 mb-6" style="color: rgba(250,247,240,0.8); line-height: 1.7; max-width: 480px">
               Premium sustainable gifting featuring herbal tea, organic honey, artisanal incense,
               and healthy snacks. Turning simple moments into beautiful memories.
@@ -352,12 +356,18 @@ const reviews = [
 
 <style scoped>
 .header-sticky { position: sticky; top: 0; z-index: 50; }
-.header-logo { position: absolute; left: 50%; transform: translateX(-50%); }
-.nav-link { color: var(--vio-purple-dark); font-size: 0.9rem; transition: opacity 0.2s; }
+.logo-badge {
+  display: flex; align-items: center; justify-content: center;
+  width: 60px; height: 60px; border-radius: 999px; background: #fff;
+  box-shadow: 0 2px 10px rgba(46, 27, 48, 0.18); overflow: hidden;
+}
+.logo-badge img { width: 84%; height: 84%; object-fit: contain; }
+.logo-badge--footer { width: 84px; height: 84px; }
+.nav-link { color: var(--vio-gold); font-size: 0.9rem; transition: opacity 0.2s; }
 .nav-link:hover { opacity: 0.7; }
 .icon-link { color: var(--vio-purple); transition: opacity 0.2s; }
 .icon-link:hover { opacity: 0.7; }
-.mobile-link { color: var(--vio-purple-dark); border-bottom: 1px solid rgba(143,90,168,0.1); }
+.mobile-link { color: var(--vio-gold); border-bottom: 1px solid rgba(143,90,168,0.1); }
 .login-btn {
   display: inline-flex; align-items: center; justify-content: center;
   padding: 8px 18px; border-radius: 999px; font-size: 0.875rem;

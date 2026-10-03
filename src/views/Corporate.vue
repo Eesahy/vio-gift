@@ -56,8 +56,8 @@
                   <h4 class="font-display mb-2" style="color: var(--vio-purple); font-size: 1.3rem">{{ p.name }}</h4>
                   <p class="text-body-2 mb-3" style="color: var(--vio-purple-dark)">{{ p.description }}</p>
                   <div class="d-flex align-center justify-space-between">
-                    <div class="d-flex"><v-icon v-for="i in 5" :key="i" icon="mdi-star" size="14" color="secondary" /></div>
-                    <p class="font-display mb-0" style="color: var(--vio-purple); font-size: 1.3rem">from £{{ p.price }}</p>
+                    <div class="d-flex"><v-icon v-for="i in 5" :key="i" icon="mdi-star" size="14" color="gold" /></div>
+                    <p class="font-display mb-0" style="color: var(--vio-purple); font-size: 1.3rem">from ₦{{ p.price }}</p>
                   </div>
                 </div>
               </v-card>
@@ -131,7 +131,7 @@
             </h4>
             <v-row dense>
               <v-col cols="12" sm="6"><v-text-field v-model="form.quantity" type="number" min="1" label="Quantity Needed *" placeholder="e.g. 50" required /></v-col>
-              <v-col cols="12" sm="6"><v-text-field v-model="form.budget" label="Budget per Unit" placeholder="e.g. £80–£100" /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="form.budget" label="Budget per Unit" placeholder="e.g. ₦80–₦100" /></v-col>
               <v-col cols="12">
                 <v-select v-model="form.occasion" :items="occasions" label="Occasion / Purpose" />
               </v-col>
@@ -178,9 +178,9 @@ const stats = [
 ];
 
 const tiers = [
-  { name: "Standard", minQty: 10, price: "£65/unit", features: ["Branded tissue paper", "Thank you card", "Standard box"] },
-  { name: "Premium", minQty: 25, price: "£95/unit", features: ["Custom ribbon", "Branded card", "Premium box", "Logo sticker"] },
-  { name: "Luxury", minQty: 50, price: "£130/unit", features: ["Full branded packaging", "Personalised card", "Luxury box", "Gold ribbon", "Handwritten note"] },
+  { name: "Standard", minQty: 10, price: "₦65/unit", features: ["Branded tissue paper", "Thank you card", "Standard box"] },
+  { name: "Premium", minQty: 25, price: "₦95/unit", features: ["Custom ribbon", "Branded card", "Premium box", "Logo sticker"] },
+  { name: "Luxury", minQty: 50, price: "₦130/unit", features: ["Full branded packaging", "Personalised card", "Luxury box", "Gold ribbon", "Handwritten note"] },
 ];
 
 const occasions = ["Client Appreciation", "Staff Gifts", "Conference Giveaways", "Eid / Ramadan", "Christmas", "Product Launch", "Team Building", "Other"];

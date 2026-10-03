@@ -68,12 +68,12 @@
 
           <div class="d-flex align-center ga-2 mb-4">
             <div class="d-flex">
-              <v-icon v-for="i in 5" :key="i" icon="mdi-star" size="16" color="secondary" />
+              <v-icon v-for="i in 5" :key="i" icon="mdi-star" size="16" color="gold" />
             </div>
             <span class="text-body-2" style="color: var(--vio-purple-dark)">(48 reviews)</span>
           </div>
 
-          <p class="font-display mb-4" style="color: var(--vio-purple); font-size: 2.25rem">£{{ product.price }}</p>
+          <p class="font-display mb-4" style="color: var(--vio-purple); font-size: 2.25rem">₦{{ product.price }}</p>
 
           <p class="mb-6" style="color: var(--vio-purple-dark); line-height: 1.7">{{ product.description }}</p>
 
