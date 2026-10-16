@@ -129,7 +129,7 @@ import { useCartStore } from "@/store/cart";
 const cart = useCartStore();
 const order = ref(cart.orderDetails);
 const cartTotal = ref(cart.cartTotal);
-const orderNumber = `VGS-${Date.now().toString().slice(-6)}`;
+const orderNumber = order.value?.orderNumber || `VGS-${Date.now().toString().slice(-6)}`;
 
 const today = new Date().toLocaleDateString("en-GB", {
   weekday: "long", year: "numeric", month: "long", day: "numeric",

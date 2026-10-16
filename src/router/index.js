@@ -11,6 +11,7 @@ const routes = [
   { path: "/catalogue", name: "catalogue", component: () => import("@/views/Catalogue.vue") },
   { path: "/price-list", name: "price-list", component: () => import("@/views/PriceList.vue") },
   { path: "/design-hub", name: "design-hub", component: () => import("@/views/DesignHub.vue") },
+  { path: "/admin", name: "admin", component: () => import("@/views/AdminDashboard.vue") },
   { path: "/:pathMatch(.*)*", name: "not-found", component: () => import("@/views/NotFound.vue") },
 ];
 

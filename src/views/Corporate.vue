@@ -168,6 +168,7 @@ import { ref, reactive, computed } from "vue";
 import SimpleHeader from "@/components/SimpleHeader.vue";
 import SimpleFooter from "@/components/SimpleFooter.vue";
 import { allProducts } from "@/data/products";
+import { useAdminStore } from "@/store/admin";
 
 const corporateProducts = allProducts.filter((p) => p.category === "corporate");
 
@@ -192,7 +193,10 @@ const form = reactive({
   quantity: "", budget: "", occasion: "", requirements: "", tier: "",
 });
 
+const admin = useAdminStore();
+
 function handleSubmit() {
+  admin.recordEnquiry({ ...form, quantity: Number(form.quantity) || 0 });
   formSent.value = true;
 }
 </script>

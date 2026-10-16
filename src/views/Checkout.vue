@@ -157,9 +157,11 @@ import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import SimpleHeader from "@/components/SimpleHeader.vue";
 import { useCartStore } from "@/store/cart";
+import { useAdminStore, makeOrderNumber } from "@/store/admin";
 
 const router = useRouter();
 const cart = useCartStore();
+const admin = useAdminStore();
 
 const tab = ref("delivery");
 const payMethod = ref("card");
@@ -207,19 +209,33 @@ function handlePay() {
   if (!validate()) return;
   isProcessing.value = true;
   setTimeout(() => {
+    const orderNumber = makeOrderNumber();
+    const items = cart.items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    }));
+    const fulfillmentMethod = tab.value === "pickup" ? "Pickup" : "Delivery";
     cart.setOrderDetails({
       ...form,
+      orderNumber,
       total: cartTotal.value,
       subtotal: cart.subtotal,
       itemCount: cart.itemCount,
-      items: cart.items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-      })),
-      fulfillmentMethod: tab.value === "pickup" ? "Pickup" : "Delivery",
+      items,
+      fulfillmentMethod,
       tab: tab.value,
+    });
+    // Card details are deliberately left out of the admin record.
+    admin.recordOrder({
+      orderNumber,
+      customer: { name: form.fullName, email: form.email, phone: form.phone, city: form.city },
+      items,
+      subtotal: cart.subtotal,
+      total: cartTotal.value,
+      fulfillmentMethod,
+      paymentMethod: payMethod.value === "card" ? "Card" : "Bank Transfer",
     });
     router.push("/order-complete");
   }, 2200);
