@@ -17,12 +17,13 @@
         </div>
         <div class="d-flex align-center justify-center ga-2 mb-3">
           <v-icon icon="mdi-creation" size="20" color="secondary" />
-          <span class="text-caption text-uppercase" style="letter-spacing: 0.15em; color: var(--vio-gold)">Order Confirmed</span>
+          <span class="text-caption text-uppercase" style="letter-spacing: 0.15em; color: var(--vio-gold)">{{ payLater ? "Booking Confirmed" : "Order Confirmed" }}</span>
           <v-icon icon="mdi-creation" size="20" color="secondary" />
         </div>
         <h2 class="font-display mb-3" style="color: var(--vio-purple); font-size: 2.5rem">Thank You!</h2>
         <p style="color: var(--vio-purple-dark); font-size: 1.1rem">
-          Your gift is on its way to becoming a beautiful memory.
+          <template v-if="order?.scheduledFor">Your gift is booked for <strong style="color: var(--vio-purple)">{{ formatDateKey(order.scheduledFor, { weekday: "long", day: "numeric", month: "long" }) }}</strong>.</template>
+          <template v-else>Your gift is on its way to becoming a beautiful memory.</template>
         </p>
       </div>
 
@@ -60,6 +61,7 @@
               <template v-else>
                 <p class="text-body-2" style="color: var(--vio-purple-dark)">{{ order.address }}</p>
                 <p class="text-body-2" style="color: var(--vio-purple-dark)">{{ order.city }}{{ order.postcode ? `, ${order.postcode}` : "" }}</p>
+                <p v-if="order.scheduledFor" class="text-body-2" style="color: var(--vio-purple-dark)">Delivery date: <strong style="color: var(--vio-purple)">{{ formatDateKey(order.scheduledFor) }}</strong></p>
               </template>
             </v-col>
           </v-row>
@@ -88,7 +90,7 @@
               <span style="color: var(--vio-success)">Included</span>
             </div>
             <div class="d-flex justify-space-between pt-3" style="border-top: 1px solid rgba(46,27,48,0.15)">
-              <span class="font-display" style="color: var(--vio-purple); font-size: 1.2rem">Total Paid</span>
+              <span class="font-display" style="color: var(--vio-purple); font-size: 1.2rem">{{ payLater ? `Amount Due by ${formatDateKey(order.scheduledFor, { day: "numeric", month: "short" })}` : "Total Paid" }}</span>
               <span class="font-display" style="color: var(--vio-purple); font-size: 1.5rem">₦{{ cartTotal.toFixed(2) }}</span>
             </div>
           </div>
@@ -97,7 +99,7 @@
         <div class="pa-6 d-flex align-center ga-3" style="background-color: var(--vio-cream)">
           <v-icon icon="mdi-email-outline" size="20" color="primary" />
           <p class="text-body-2 ma-0" style="color: var(--vio-purple-dark)">
-            A confirmation email with your invoice has been sent to
+            {{ payLater ? "A confirmation email with your secure payment link has been sent to" : "A confirmation email with your invoice has been sent to" }}
             <strong style="color: var(--vio-purple)">{{ order?.email || "your email" }}</strong>.
           </p>
         </div>
@@ -125,10 +127,12 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useCartStore } from "@/store/cart";
+import { formatDateKey } from "@/store/admin";
 
 const cart = useCartStore();
 const order = ref(cart.orderDetails);
-const cartTotal = ref(cart.cartTotal);
+const cartTotal = ref(order.value?.total ?? cart.cartTotal);
+const payLater = order.value?.paymentOption === "later";
 const orderNumber = order.value?.orderNumber || `VGS-${Date.now().toString().slice(-6)}`;
 
 const today = new Date().toLocaleDateString("en-GB", {

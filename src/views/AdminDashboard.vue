@@ -42,7 +42,7 @@
 
       <!-- KPI tiles -->
       <v-row dense class="mb-4">
-        <v-col v-for="k in kpis" :key="k.label" cols="6" md="4" lg="2">
+        <v-col v-for="k in kpis" :key="k.label" cols="6" md="3">
           <v-card rounded="xl" class="kpi pa-5 h-100" elevation="0">
             <div class="d-flex align-center ga-2 mb-3">
               <v-icon :icon="k.icon" size="18" color="primary" />
@@ -73,6 +73,87 @@
         />
         <p v-else class="empty">No orders in this period yet.</p>
       </v-card>
+
+      <!-- Bookings -->
+      <v-row dense class="mb-4">
+        <v-col cols="12" lg="7">
+          <v-card rounded="xl" class="panel pa-6 h-100" elevation="0">
+            <div class="d-flex align-center flex-wrap ga-2 mb-1">
+              <h2 class="font-display panel-title ma-0">Upcoming bookings</h2>
+              <v-spacer />
+              <v-btn size="small" variant="text" color="primary" class="text-none" append-icon="mdi-arrow-right" @click="showOrders('booked')">
+                All bookings
+              </v-btn>
+            </div>
+            <p class="panel-sub mb-4">Gifts booked for a date, soonest first</p>
+
+            <div v-if="upcomingBookings.length" class="d-flex flex-column">
+              <div v-for="o in upcomingBookings.slice(0, 6)" :key="o.orderNumber" class="booking-row d-flex align-center ga-4 py-3">
+                <div class="date-block">
+                  <span class="date-month">{{ formatDateKey(o.scheduledFor, { month: "short" }) }}</span>
+                  <span class="date-day">{{ formatDateKey(o.scheduledFor, { day: "numeric" }) }}</span>
+                </div>
+                <div class="flex-grow-1" style="min-width: 0">
+                  <div class="bar-name">{{ o.customer.name }} · {{ o.orderNumber }}</div>
+                  <div class="cell-sub">
+                    {{ relativeDay(o.scheduledFor) }} · {{ o.fulfillmentMethod }}{{ o.scheduledTime ? ` at ${o.scheduledTime}` : "" }}
+                    · {{ unitsIn(o) }} item{{ unitsIn(o) === 1 ? "" : "s" }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="bar-value">{{ naira(o.total) }}</div>
+                  <PaymentChip :state="paymentState(o)" />
+                </div>
+              </div>
+            </div>
+            <p v-else class="empty py-6">No upcoming bookings.</p>
+          </v-card>
+        </v-col>
+
+        <v-col cols="12" lg="5">
+          <v-card rounded="xl" class="panel pa-6 h-100" elevation="0">
+            <h2 class="font-display panel-title mb-1">Bookings, next 14 days</h2>
+            <p class="panel-sub mb-5">Gifts due out per day · hover for detail</p>
+            <div class="day-chart" role="img" aria-label="Number of booked gifts per day for the next 14 days">
+              <v-tooltip v-for="d in bookingDays" :key="d.key" location="top">
+                <template #activator="{ props: tp }">
+                  <div v-bind="tp" class="day-col">
+                    <span class="day-count">{{ d.count || "" }}</span>
+                    <div class="day-bar-area">
+                      <div class="day-bar" :style="{ height: d.count ? `${(d.count / maxBookingDay) * 100}%` : '0' }" />
+                    </div>
+                    <span class="day-label" :class="{ weekend: d.weekend }">{{ d.weekday }}<br />{{ d.day }}</span>
+                  </div>
+                </template>
+                <strong>{{ d.label }}</strong><br />
+                {{ d.count }} booking{{ d.count === 1 ? "" : "s" }} · {{ naira(d.value) }}
+                <template v-if="d.unpaid"><br />{{ d.unpaid }} awaiting payment</template>
+              </v-tooltip>
+            </div>
+
+            <v-divider class="my-5" />
+
+            <h3 class="font-display sub-title mb-3">Pay later</h3>
+            <div class="d-flex justify-space-between text-body-2 mb-2">
+              <span>Awaiting payment</span>
+              <span class="bar-value">{{ naira(unpaid.amount) }} · {{ unpaid.count }}</span>
+            </div>
+            <div class="d-flex justify-space-between text-body-2 mb-2">
+              <span class="d-flex align-center ga-1">
+                <v-icon icon="mdi-alert-circle-outline" size="16" color="error" /> Overdue
+              </span>
+              <span class="bar-value">{{ naira(unpaid.overdueAmount) }} · {{ unpaid.overdue }}</span>
+            </div>
+            <div class="d-flex justify-space-between text-body-2 mb-3">
+              <span>Collected from pay later ({{ rangeLabel }})</span>
+              <span class="bar-value">{{ naira(collectedLater) }}</span>
+            </div>
+            <v-btn v-if="unpaid.count" size="small" variant="tonal" color="primary" class="text-none" @click="showOrders('unpaid')">
+              Review unpaid orders
+            </v-btn>
+          </v-card>
+        </v-col>
+      </v-row>
 
       <v-row dense class="mb-4">
         <!-- Top products -->
@@ -155,7 +236,7 @@
       </v-row>
 
       <!-- Detail tables -->
-      <v-card rounded="xl" class="panel" elevation="0">
+      <v-card ref="tablesCard" rounded="xl" class="panel" elevation="0">
         <v-tabs v-model="tab" color="primary" class="px-4 pt-2">
           <v-tab value="orders" class="text-none">
             Orders <v-badge v-if="openOrders" :content="openOrders" color="warning" inline />
@@ -172,6 +253,11 @@
         <v-window v-model="tab">
           <!-- Orders -->
           <v-window-item value="orders" class="pa-4">
+            <v-btn-toggle v-model="orderView" mandatory density="compact" rounded="lg" color="primary" variant="outlined" divided class="mb-4">
+              <v-btn value="all" class="text-none" rounded="0">All orders</v-btn>
+              <v-btn value="booked" class="text-none" rounded="0" prepend-icon="mdi-calendar-heart">Booked ({{ bookedCount }})</v-btn>
+              <v-btn value="unpaid" class="text-none" rounded="0" prepend-icon="mdi-clock-outline">Unpaid ({{ unpaid.count }})</v-btn>
+            </v-btn-toggle>
             <div class="d-flex flex-wrap ga-3 mb-4">
               <v-text-field
                 v-model="orderSearch"
@@ -194,7 +280,7 @@
               :headers="orderHeaders"
               :items="filteredOrders"
               item-value="orderNumber"
-              :sort-by="[{ key: 'createdAt', order: 'desc' }]"
+              v-model:sort-by="orderSort"
               items-per-page="10"
               show-expand
               density="comfortable"
@@ -207,8 +293,37 @@
                   <div class="cell-sub">{{ item.customer.email }}</div>
                 </div>
               </template>
-              <template #item.units="{ item }">{{ unitsIn(item) }}</template>
+              <template #item.scheduledFor="{ item }">
+                <div v-if="item.scheduledFor" class="py-1">
+                  <div>{{ formatDateKey(item.scheduledFor, { day: "numeric", month: "short", year: "numeric" }) }}</div>
+                  <div class="cell-sub">{{ relativeDay(item.scheduledFor) }}{{ item.scheduledTime ? ` · ${item.scheduledTime}` : "" }}</div>
+                </div>
+                <span v-else class="cell-sub">ASAP</span>
+              </template>
               <template #item.total="{ value }"><span class="bar-value">{{ naira(value) }}</span></template>
+              <template #item.paymentStatus="{ item }">
+                <v-menu>
+                  <template #activator="{ props: mp }">
+                    <PaymentChip v-bind="mp" :state="paymentState(item)" menu />
+                  </template>
+                  <v-list density="compact">
+                    <v-list-item
+                      v-for="m in ['Card', 'Bank Transfer']"
+                      :key="m"
+                      prepend-icon="mdi-check-circle-outline"
+                      :title="`Mark paid · ${m}`"
+                      :active="item.paymentStatus === 'Paid' && item.paymentMethod === m"
+                      @click="admin.markPaid(item.orderNumber, m)"
+                    />
+                    <v-list-item
+                      v-if="item.paymentStatus === 'Paid'"
+                      prepend-icon="mdi-clock-outline"
+                      title="Mark unpaid (pay later)"
+                      @click="admin.markUnpaid(item.orderNumber)"
+                    />
+                  </v-list>
+                </v-menu>
+              </template>
               <template #item.status="{ item }">
                 <v-menu>
                   <template #activator="{ props: mp }">
@@ -236,7 +351,9 @@
                       <span>{{ naira(line.price * line.quantity) }}</span>
                     </div>
                     <div class="cell-sub mt-2">
-                      {{ item.fulfillmentMethod }} · {{ item.paymentMethod }}
+                      {{ item.fulfillmentMethod }}<span v-if="item.customer.city"> to {{ item.customer.city }}</span>
+                      · {{ item.paymentOption === "later" ? "Chose pay later" : "Paid at checkout" }}
+                      <span v-if="item.paymentStatus === 'Paid'"> · paid by {{ item.paymentMethod }}</span>
                       <span v-if="item.customer.phone"> · {{ item.customer.phone }}</span>
                       <span v-if="item.sample"> · sample order</span>
                     </div>
@@ -350,10 +467,19 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import TrendChart from "@/components/admin/TrendChart.vue";
+import PaymentChip from "@/components/admin/PaymentChip.vue";
 import { allProducts, themeDisplayNames } from "@/data/products";
-import { useAdminStore, ORDER_STATUSES, ENQUIRY_STATUSES, LOW_STOCK_THRESHOLD } from "@/store/admin";
+import {
+  useAdminStore,
+  ORDER_STATUSES,
+  ENQUIRY_STATUSES,
+  LOW_STOCK_THRESHOLD,
+  paymentState,
+  formatDateKey,
+  todayKey,
+} from "@/store/admin";
 
 const admin = useAdminStore();
 const DAY = 86400000;
@@ -365,7 +491,9 @@ const ranges = [
   { label: "All time", value: 0 },
 ];
 const rangeDays = ref(30);
+const rangeLabel = computed(() => ranges.find((r) => r.value === rangeDays.value).label.toLowerCase());
 const tab = ref("orders");
+const tablesCard = ref(null);
 
 const categoryLabels = { events: "Events & Occasions", health: "Health & Wellness", household: "Household", kids: "Kids", corporate: "Corporate" };
 const productById = Object.fromEntries(allProducts.map((p) => [p.id, p]));
@@ -435,9 +563,70 @@ const kpis = computed(() => {
     { label: "Avg. order value", icon: "mdi-scale-balance", value: naira(count ? revenue / count : 0), note: `${units} units sold` },
     { label: "Customers", icon: "mdi-account-group-outline", value: customers.toLocaleString(), note: "Unique by email" },
     { label: "Awaiting fulfilment", icon: "mdi-package-variant-closed", value: openOrders.value.toLocaleString(), note: "Pending + processing, all time" },
+    { label: "Upcoming bookings", icon: "mdi-calendar-heart", value: upcomingBookings.value.length.toLocaleString(), note: `${bookingsThisWeek.value} in the next 7 days` },
+    { label: "Awaiting payment", icon: "mdi-clock-outline", value: naira(unpaid.value.amount), note: `${unpaid.value.count} pay-later · ${unpaid.value.overdue} overdue` },
     { label: "Open corporate leads", icon: "mdi-briefcase-outline", value: openEnquiries.toLocaleString(), note: `${newEnquiries.value} new` },
   ];
 });
+
+// ── Bookings & pay later (operational: not tied to the date filter) ──
+const relativeDay = (key) => {
+  const [y, m, d] = key.split("-").map(Number);
+  const diff = Math.round((new Date(y, m - 1, d).getTime() - startOfToday) / DAY);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff === -1) return "Yesterday";
+  return diff > 0 ? `In ${diff} days` : `${-diff} days ago`;
+};
+const bookedCount = computed(() => admin.orders.filter((o) => o.scheduledFor).length);
+const upcomingBookings = computed(() =>
+  admin.orders
+    .filter((o) => o.scheduledFor && o.scheduledFor >= todayKey() && isLive(o) && o.status !== "Delivered")
+    .sort((a, b) => (a.scheduledFor + (a.scheduledTime || "")).localeCompare(b.scheduledFor + (b.scheduledTime || "")))
+);
+const bookingsThisWeek = computed(() => upcomingBookings.value.filter((o) => o.scheduledFor <= todayKey(6)).length);
+
+const unpaid = computed(() => {
+  const list = admin.orders.filter((o) => ["Unpaid", "Overdue"].includes(paymentState(o)));
+  const overdue = list.filter((o) => paymentState(o) === "Overdue");
+  return {
+    count: list.length,
+    amount: sumRevenue(list),
+    overdue: overdue.length,
+    overdueAmount: sumRevenue(overdue),
+  };
+});
+const collectedLater = computed(() =>
+  sumRevenue(liveRangeOrders.value.filter((o) => o.paymentOption === "later" && o.paymentStatus === "Paid"))
+);
+
+const bookingDays = computed(() =>
+  Array.from({ length: 14 }, (_, i) => {
+    const key = todayKey(i);
+    const list = upcomingBookings.value.filter((o) => o.scheduledFor === key);
+    const date = new Date(startOfToday + i * DAY);
+    return {
+      key,
+      count: list.length,
+      value: sumRevenue(list),
+      unpaid: list.filter((o) => o.paymentStatus === "Unpaid").length,
+      weekday: date.toLocaleDateString("en-GB", { weekday: "narrow" }),
+      day: date.getDate(),
+      weekend: [0, 6].includes(date.getDay()),
+      label: formatDateKey(key, { weekday: "long", day: "numeric", month: "short" }),
+    };
+  })
+);
+const maxBookingDay = computed(() => Math.max(1, ...bookingDays.value.map((d) => d.count)));
+
+async function showOrders(view) {
+  tab.value = "orders";
+  orderView.value = view;
+  orderStatusFilter.value = "All";
+  orderSort.value = view === "booked" ? [{ key: "scheduledFor", order: "asc" }] : [{ key: "createdAt", order: "desc" }];
+  await nextTick();
+  tablesCard.value?.$el?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 // ── Revenue trend (one point per day) ──
 const trend = computed(() => {
@@ -494,17 +683,21 @@ const categorySales = computed(() => groupSales((p) => p?.category, (k) => categ
 const topThemes = computed(() => groupSales((p) => p?.theme, (k) => themeDisplayNames[k] || "Other").slice(0, 5));
 
 // ── Operations splits ──
-function split(field, values) {
-  const list = liveRangeOrders.value;
-  return values.map((label) => {
-    const count = list.filter((o) => o[field] === label).length;
-    return { label, count, share: list.length ? (count / list.length) * 100 : 0 };
+function split(list, field, values, labels = values) {
+  return values.map((value, i) => {
+    const count = list.filter((o) => o[field] === value).length;
+    return { label: labels[i], count, share: list.length ? (count / list.length) * 100 : 0 };
   });
 }
-const splits = computed(() => [
-  { title: "Fulfilment", rows: split("fulfillmentMethod", ["Delivery", "Pickup"]) },
-  { title: "Payment", rows: split("paymentMethod", ["Card", "Bank Transfer"]) },
-]);
+const splits = computed(() => {
+  const live = liveRangeOrders.value;
+  const paid = live.filter((o) => o.paymentStatus === "Paid");
+  return [
+    { title: "Fulfilment", rows: split(live, "fulfillmentMethod", ["Delivery", "Pickup"]) },
+    { title: "Payment choice", rows: split(live, "paymentOption", ["now", "later"], ["Pay now", "Pay later"]) },
+    { title: "Paid by", rows: split(paid, "paymentMethod", ["Card", "Bank Transfer"]) },
+  ];
+});
 const topCities = computed(() => {
   const map = {};
   liveRangeOrders.value.forEach((o) => {
@@ -523,20 +716,24 @@ const orderStatusFilter = ref("All");
 const statusCounts = computed(() =>
   admin.orders.reduce((m, o) => ((m[o.status] = (m[o.status] || 0) + 1), m), {})
 );
+const orderView = ref("all"); // "all" | "booked" | "unpaid"
+const orderSort = ref([{ key: "createdAt", order: "desc" }]);
 const orderHeaders = [
   { title: "Order", key: "orderNumber" },
-  { title: "Date", key: "createdAt" },
+  { title: "Placed", key: "createdAt" },
   { title: "Customer", key: "customer", sortable: false },
-  { title: "City", key: "customer.city" },
-  { title: "Units", key: "units", sortable: false },
+  { title: "Booked for", key: "scheduledFor" },
   { title: "Fulfilment", key: "fulfillmentMethod" },
   { title: "Total", key: "total", align: "end" },
+  { title: "Payment", key: "paymentStatus" },
   { title: "Status", key: "status" },
   { title: "", key: "data-table-expand" },
 ];
 const filteredOrders = computed(() => {
   const q = (orderSearch.value || "").toLowerCase().trim();
   return admin.orders.filter((o) => {
+    if (orderView.value === "booked" && !o.scheduledFor) return false;
+    if (orderView.value === "unpaid" && !["Unpaid", "Overdue"].includes(paymentState(o))) return false;
     if (orderStatusFilter.value && orderStatusFilter.value !== "All" && o.status !== orderStatusFilter.value) return false;
     if (!q) return true;
     return [o.orderNumber, o.customer.name, o.customer.email, o.customer.city].some((f) => f?.toLowerCase().includes(q));
@@ -709,6 +906,81 @@ const enquiryHeaders = [
   border-radius: 4px;
   background: #8f5aa8;
   transition: width 0.4s ease;
+}
+.booking-row + .booking-row {
+  border-top: 1px solid var(--vio-light-gray);
+}
+.date-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--vio-cream);
+  border: 1px solid rgba(143, 90, 168, 0.18);
+}
+.date-month {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vio-text-muted);
+}
+.date-day {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--vio-purple);
+}
+.day-chart {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  height: 150px;
+}
+.day-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: default;
+}
+.day-count {
+  font-size: 0.7rem;
+  height: 16px;
+  color: var(--vio-purple-dark);
+  font-variant-numeric: tabular-nums;
+}
+.day-bar-area {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid var(--vio-light-gray);
+}
+.day-bar {
+  width: min(100%, 22px);
+  background: #8f5aa8;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.4s ease;
+}
+.day-col:hover .day-bar-area {
+  background: rgba(143, 90, 168, 0.06);
+}
+.day-label {
+  margin-top: 4px;
+  font-size: 0.65rem;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--vio-text-muted);
+}
+.day-label.weekend {
+  color: var(--vio-purple-dark);
+  font-weight: 600;
 }
 .cell-sub {
   font-size: 0.75rem;

@@ -13,6 +13,7 @@
 
             <nav class="d-none d-md-flex align-center ga-6">
               <router-link to="/catalogue" class="nav-link">Shop All</router-link>
+              <a href="#book-later" class="nav-link" @click.prevent="scrollToSection('book-later')">Book for Later</a>
               <router-link to="/corporate" class="nav-link">Corporate</router-link>
               <router-link to="/price-list" class="nav-link">Custom Orders</router-link>
             </nav>
@@ -52,6 +53,7 @@
           >
             {{ item.label }}
           </router-link>
+          <a href="#book-later" class="d-block py-2 text-body-1 mobile-link" @click.prevent="scrollToSection('book-later')">Book for Later</a>
           <div class="d-flex ga-3 pt-2">
             <router-link to="/checkout" class="flex-1 text-center py-2 login-btn" style="flex: 1">Login</router-link>
             <router-link to="/checkout" class="flex-1 text-center py-2 register-btn" style="flex: 1">Register</router-link>
@@ -83,13 +85,17 @@
           </p>
 
           <div class="d-flex flex-column flex-sm-row justify-center ga-4">
-            <a href="#themes" class="hero-btn-solid">
+            <a href="#themes" class="hero-btn-solid" @click.prevent="scrollToSection('themes')">
               <v-icon icon="mdi-gift-outline" size="20" class="mr-2" />
               Shop Now
             </a>
-            <a href="#build" class="hero-btn-outline">
+            <a href="#build" class="hero-btn-outline" @click.prevent="scrollToSection('build')">
               Build Your Box
               <v-icon icon="mdi-chevron-right" size="18" class="ml-1" />
+            </a>
+            <a href="#book-later" class="hero-btn-outline" @click.prevent="scrollToSection('book-later')">
+              <v-icon icon="mdi-calendar-heart" size="20" class="mr-2" />
+              Book for Later
             </a>
           </div>
         </div>
@@ -156,6 +162,98 @@
                 </div>
               </v-card>
             </router-link>
+          </v-col>
+        </v-row>
+      </v-container>
+    </section>
+
+    <!-- BOOK A GIFT FOR LATER -->
+    <section id="book-later" class="vio-gradient book-section">
+      <v-container style="max-width: 1100px">
+        <v-row align="center">
+          <v-col cols="12" md="6" class="pr-md-10">
+            <div class="d-flex align-center ga-2 mb-4">
+              <v-icon icon="mdi-creation" size="16" color="gold" />
+              <span class="text-caption text-uppercase" style="letter-spacing: 0.15em; color: var(--vio-gold)">New · Plan Ahead</span>
+            </div>
+            <h3 class="font-display mb-4" style="font-size: clamp(2rem, 4vw, 2.75rem); line-height: 1.15">Book a Gift for Later</h3>
+            <p class="mb-8" style="color: rgba(250,247,240,0.85); font-size: 1.05rem; line-height: 1.7">
+              Never miss a birthday, anniversary or Eid again. Choose the day, pick the perfect gift,
+              and we'll make sure it arrives right on time.
+            </p>
+            <div class="d-flex flex-column ga-5">
+              <div v-for="(step, i) in bookSteps" :key="step.title" class="d-flex ga-4">
+                <div class="book-step-icon">
+                  <v-icon :icon="step.icon" size="22" color="gold" />
+                </div>
+                <div>
+                  <p class="font-display mb-1" style="color: #faf7f0; font-size: 1.1rem">{{ i + 1 }}. {{ step.title }}</p>
+                  <p class="text-body-2 ma-0" style="color: rgba(250,247,240,0.75)">{{ step.desc }}</p>
+                </div>
+              </div>
+            </div>
+          </v-col>
+
+          <v-col cols="12" md="6">
+            <v-card rounded="xl" class="pa-6 pa-sm-8" elevation="8">
+              <!-- Not an h4: theme.css forces headings inside .vio-gradient to cream. -->
+              <p class="font-display mb-1" style="font-size: 1.5rem; color: var(--vio-purple)">When is the special day?</p>
+              <p class="text-body-2 mb-6" style="color: var(--vio-text-muted)">Delivery or pickup on the date you choose.</p>
+
+              <v-text-field
+                v-model="bookDate"
+                type="date"
+                :min="todayKey(1)"
+                label="Gift date *"
+                prepend-inner-icon="mdi-calendar-heart"
+                :error-messages="bookError"
+                :hint="bookDate ? formatDateKey(bookDate, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''"
+                persistent-hint
+                class="mb-3"
+                @update:model-value="bookError = ''"
+              />
+
+              <div class="d-flex flex-wrap ga-2 mb-5">
+                <v-chip
+                  v-for="q in quickDates"
+                  :key="q.label"
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                  :class="{ 'quick-active': bookDate === q.key }"
+                  @click="bookDate = q.key; bookError = ''"
+                >
+                  {{ q.label }}
+                </v-chip>
+              </div>
+
+              <v-select
+                v-model="bookOccasion"
+                :items="occasionOptions"
+                item-title="name"
+                item-value="id"
+                label="Occasion or recipient (optional)"
+                prepend-inner-icon="mdi-gift-outline"
+                clearable
+                class="mb-2"
+              />
+
+              <v-btn block size="x-large" color="primary" rounded="lg" class="text-none" append-icon="mdi-arrow-right" @click="startBooking">
+                Choose a Gift
+              </v-btn>
+              <p class="text-caption text-center mt-3 mb-0" style="color: var(--vio-text-muted)">
+                <v-icon icon="mdi-clock-outline" size="14" /> Reserve today with <strong style="color: var(--vio-purple)">Pay Later</strong> — no payment until before the big day.
+              </p>
+
+              <div v-if="cart.bookingDate" class="current-booking mt-5">
+                <v-icon icon="mdi-calendar-check" size="18" color="primary" />
+                <span class="text-body-2">
+                  You're booking for <strong>{{ formatDateKey(cart.bookingDate) }}</strong>
+                </span>
+                <v-spacer />
+                <button class="clear-booking" @click="cart.setBookingDate(''); bookDate = ''">Clear</button>
+              </div>
+            </v-card>
           </v-col>
         </v-row>
       </v-container>
@@ -327,9 +425,63 @@
 
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import { themeCards, occasionCards } from "@/data/products";
+import { useCartStore } from "@/store/cart";
+import { todayKey, formatDateKey } from "@/store/admin";
 
+const router = useRouter();
+const cart = useCartStore();
 const mobileMenuOpen = ref(false);
+
+// In-page links scroll smoothly to their section, leaving room for the sticky header
+// (80px tall). Done by hand so repeat clicks work and the router never resets to the top.
+const HEADER_OFFSET = 88;
+function scrollToSection(id) {
+  const scroll = () => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET, behavior: "smooth" });
+    history.replaceState(history.state, "", `#${id}`);
+  };
+  if (mobileMenuOpen.value) {
+    // Let the mobile menu finish collapsing first, or the measured position is off by its height.
+    mobileMenuOpen.value = false;
+    setTimeout(scroll, 320);
+  } else {
+    scroll();
+  }
+}
+
+// ── Book a Gift for Later ──
+const bookSteps = [
+  { icon: "mdi-calendar-heart", title: "Pick the date", desc: "Tell us the day it should arrive — weeks or months ahead." },
+  { icon: "mdi-gift-outline", title: "Choose the perfect gift", desc: "Browse curated boxes for every occasion and relationship." },
+  { icon: "mdi-wallet-outline", title: "Pay now or pay later", desc: "Pay at checkout, or reserve today and pay any time before the big day." },
+];
+const bookDate = ref(cart.bookingDate >= todayKey(1) ? cart.bookingDate : "");
+const bookOccasion = ref(null);
+const bookError = ref("");
+const quickDates = [
+  { label: "Tomorrow", key: todayKey(1) },
+  { label: "In 1 week", key: todayKey(7) },
+  { label: "In 2 weeks", key: todayKey(14) },
+  { label: "In 1 month", key: todayKey(30) },
+];
+const occasionOptions = [...occasionCards, ...themeCards].map(({ id, name }) => ({ id, name }));
+
+function startBooking() {
+  if (!bookDate.value) {
+    bookError.value = "Choose the date your gift should arrive";
+    return;
+  }
+  if (bookDate.value < todayKey(1)) {
+    bookError.value = "Choose a date from tomorrow onwards";
+    return;
+  }
+  cart.setBookingDate(bookDate.value);
+  router.push(bookOccasion.value ? `/products/${bookOccasion.value}` : "/catalogue");
+}
 
 const mobileLinks = [
   { to: "/catalogue", label: "Shop All" },
@@ -413,6 +565,22 @@ const reviews = [
   width: 20px; height: 20px; border-radius: 999px; display: inline-flex;
   align-items: center; justify-content: center; font-size: 11px;
   background-color: var(--vio-purple); color: var(--vio-cream);
+}
+.book-section { padding: 80px 0; }
+.book-step-icon {
+  width: 48px; height: 48px; flex-shrink: 0; border-radius: 999px; display: flex;
+  align-items: center; justify-content: center;
+  background: rgba(250,247,240,0.1); border: 1px solid rgba(200,169,106,0.5);
+}
+.quick-active { background-color: var(--vio-purple) !important; color: #faf7f0 !important; }
+.current-booking {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px;
+  background: var(--vio-cream); color: var(--vio-purple-dark);
+}
+.current-booking strong { color: var(--vio-purple); }
+.clear-booking {
+  background: none; border: none; cursor: pointer; padding: 0;
+  color: var(--vio-gold); font-size: 0.85rem; text-decoration: underline;
 }
 .why-icon {
   width: 64px; height: 64px; border-radius: 999px; display: flex;

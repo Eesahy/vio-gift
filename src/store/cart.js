@@ -15,6 +15,8 @@ export const useCartStore = defineStore("cart", {
     cartTotal: Number(sessionStorage.getItem("cartTotal") || 0),
     giftingOptions: JSON.parse(sessionStorage.getItem("giftingOptions") || "null"),
     orderDetails: JSON.parse(sessionStorage.getItem("orderDetails") || "null"),
+    // "YYYY-MM-DD" chosen via "Book a Gift for Later"; prefills the checkout date.
+    bookingDate: sessionStorage.getItem("bookingDate") || "",
   }),
 
   getters: {
@@ -64,10 +66,16 @@ export const useCartStore = defineStore("cart", {
       this.orderDetails = details;
       sessionStorage.setItem("orderDetails", JSON.stringify(details));
     },
+    setBookingDate(date) {
+      this.bookingDate = date || "";
+      if (date) sessionStorage.setItem("bookingDate", date);
+      else sessionStorage.removeItem("bookingDate");
+    },
     clearAfterOrder() {
       this.items = [];
       sessionStorage.removeItem("cart");
       sessionStorage.removeItem("cartTotal");
+      this.setBookingDate("");
     },
   },
 });

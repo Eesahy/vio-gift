@@ -5,6 +5,9 @@ import { allProducts } from "@/data/products";
 // enquiries in localStorage. When an API exists, swap read/write for fetch calls.
 const ORDERS_KEY = "vio-admin-orders";
 const ENQUIRIES_KEY = "vio-admin-enquiries";
+// Bump when the sample data shape changes so stale sample orders get regenerated.
+const SAMPLE_VERSION_KEY = "vio-admin-sample-version";
+const SAMPLE_VERSION = 2;
 
 export const ORDER_STATUSES = ["Pending", "Processing", "Dispatched", "Delivered", "Cancelled"];
 export const ENQUIRY_STATUSES = ["New", "Contacted", "Quoted", "Won", "Lost"];
@@ -24,6 +27,35 @@ function write(key, value) {
   } catch {
     // Storage full or blocked — the dashboard still works for this session.
   }
+}
+
+// Booking dates are stored as local "YYYY-MM-DD" keys so they compare as strings
+// and don't shift across time zones.
+export function toDateKey(date) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export function todayKey(offsetDays = 0) {
+  return toDateKey(Date.now() + offsetDays * 86400000);
+}
+
+export function formatDateKey(key, opts = { weekday: "short", day: "numeric", month: "short", year: "numeric" }) {
+  if (!key) return "";
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-GB", opts);
+}
+
+// Payment state shown to admins: Paid, Unpaid (pay later, not yet due) or Overdue.
+export function paymentState(order) {
+  if (order.paymentStatus !== "Unpaid") return "Paid";
+  if (order.status === "Cancelled") return "Void";
+  return order.scheduledFor && order.scheduledFor < todayKey() ? "Overdue" : "Unpaid";
+}
+
+// Orders saved before bookings existed have no payment fields — treat them as paid now.
+function normalizeOrder(o) {
+  return { scheduledFor: null, scheduledTime: "", paymentOption: "now", paymentStatus: "Paid", ...o };
 }
 
 export function makeOrderNumber() {
@@ -62,7 +94,22 @@ function buildSampleOrders() {
     const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
     const extra = rand() < 0.3 ? 5 : 0;
     const name = pick(SAMPLE_NAMES);
-    const recent = daysAgo < 3;
+    const fulfillmentMethod = rand() < 0.72 ? "Delivery" : "Pickup";
+    const paidMethod = rand() < 0.65 ? "Card" : "Bank Transfer";
+
+    // Pickups always have a date; roughly 40% of deliveries are booked for a date.
+    const booked = fulfillmentMethod === "Pickup" || rand() < 0.4;
+    const scheduledFor = booked ? toDateKey(new Date(Date.parse(createdAt) + (2 + Math.floor(rand() * 20)) * 86400000)) : null;
+    const upcoming = scheduledFor && scheduledFor >= todayKey();
+    const paymentOption = booked && rand() < 0.45 ? "later" : "now";
+    // Past pay-later bookings were mostly settled; a few are left overdue.
+    const paid = paymentOption === "now" || (!upcoming && rand() < 0.75);
+
+    let status;
+    if (upcoming) status = pick(["Pending", "Pending", "Processing"]);
+    else if (!paid) status = "Pending";
+    else status = daysAgo < 3 ? pick(["Pending", "Processing"]) : pick(SAMPLE_STATUSES);
+
     orders.push({
       orderNumber: `VGS-${String(100000 + n * 137).slice(-6)}`,
       createdAt,
@@ -70,14 +117,18 @@ function buildSampleOrders() {
         name,
         email: `${name.split(" ")[0].toLowerCase()}@example.com`,
         phone: "",
-        city: pick(SAMPLE_CITIES),
+        city: fulfillmentMethod === "Pickup" ? "" : pick(SAMPLE_CITIES),
       },
       items,
       subtotal,
       total: subtotal + extra,
-      fulfillmentMethod: rand() < 0.72 ? "Delivery" : "Pickup",
-      paymentMethod: rand() < 0.65 ? "Card" : "Bank Transfer",
-      status: recent ? pick(["Pending", "Processing"]) : pick(SAMPLE_STATUSES),
+      fulfillmentMethod,
+      scheduledFor,
+      scheduledTime: fulfillmentMethod === "Pickup" ? pick(["10:00", "12:00", "14:00", "16:00"]) : "",
+      paymentOption,
+      paymentMethod: paid ? paidMethod : "Pay later",
+      paymentStatus: paid ? "Paid" : "Unpaid",
+      status,
       sample: true,
     });
   }
@@ -101,10 +152,19 @@ function buildSampleEnquiries() {
 }
 
 export const useAdminStore = defineStore("admin", {
-  state: () => ({
-    orders: read(ORDERS_KEY) ?? buildSampleOrders(),
-    enquiries: read(ENQUIRIES_KEY) ?? buildSampleEnquiries(),
-  }),
+  state: () => {
+    let orders = read(ORDERS_KEY);
+    if (!orders) {
+      orders = buildSampleOrders();
+    } else if (read(SAMPLE_VERSION_KEY) !== SAMPLE_VERSION && orders.some((o) => o.sample)) {
+      orders = [...orders.filter((o) => !o.sample), ...buildSampleOrders()];
+    }
+    write(SAMPLE_VERSION_KEY, SAMPLE_VERSION);
+    return {
+      orders: orders.map(normalizeOrder),
+      enquiries: read(ENQUIRIES_KEY) ?? buildSampleEnquiries(),
+    };
+  },
 
   getters: {
     hasSampleData: (state) => state.orders.some((o) => o.sample) || state.enquiries.some((e) => e.sample),
@@ -116,7 +176,23 @@ export const useAdminStore = defineStore("admin", {
       write(ENQUIRIES_KEY, this.enquiries);
     },
     recordOrder(order) {
-      this.orders.unshift({ ...order, status: "Pending", createdAt: new Date().toISOString() });
+      this.orders.unshift(normalizeOrder({ ...order, status: "Pending", createdAt: new Date().toISOString() }));
+      this.persist();
+    },
+    markPaid(orderNumber, method) {
+      const order = this.orders.find((o) => o.orderNumber === orderNumber);
+      if (!order) return;
+      order.paymentStatus = "Paid";
+      order.paymentMethod = method;
+      order.paidAt = new Date().toISOString();
+      this.persist();
+    },
+    markUnpaid(orderNumber) {
+      const order = this.orders.find((o) => o.orderNumber === orderNumber);
+      if (!order) return;
+      order.paymentStatus = "Unpaid";
+      order.paymentMethod = "Pay later";
+      delete order.paidAt;
       this.persist();
     },
     recordEnquiry(enquiry) {

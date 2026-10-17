@@ -18,7 +18,11 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior() {
+  scrollBehavior(to, from, savedPosition) {
+    // Back/forward restores where the user was.
+    if (savedPosition) return savedPosition;
+    // In-page anchors like /#themes scroll to that section, clearing the sticky header.
+    if (to.hash) return { el: to.hash, top: 88, behavior: "smooth" };
     return { top: 0 };
   },
 });

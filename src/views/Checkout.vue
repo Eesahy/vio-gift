@@ -34,6 +34,26 @@
             </div>
           </div>
 
+          <div v-if="tab === 'delivery'">
+            <h3 class="font-display mb-1" style="color: var(--vio-purple)">When should it arrive?</h3>
+            <p class="text-body-2 mb-4" style="color: var(--vio-text-muted)">Book your gift for a birthday, anniversary or any day that matters.</p>
+            <div class="tab-toggle mb-4">
+              <button class="tab-btn" :class="{ active: when === 'asap' }" @click="when = 'asap'">⚡ As soon as possible</button>
+              <button class="tab-btn" :class="{ active: when === 'date' }" @click="when = 'date'">📅 Book a date</button>
+            </div>
+            <v-text-field
+              v-if="when === 'date'"
+              v-model="form.deliveryDate"
+              type="date"
+              :min="todayKey(1)"
+              label="Delivery Date *"
+              prepend-inner-icon="mdi-calendar-heart"
+              :error-messages="errors.deliveryDate"
+              :hint="form.deliveryDate ? `We'll deliver on ${formatDateKey(form.deliveryDate)}` : ''"
+              persistent-hint
+            />
+          </div>
+
           <div>
             <h3 class="font-display mb-4" style="color: var(--vio-purple)">Contact Information</h3>
             <v-row dense>
@@ -75,7 +95,7 @@
             </div>
             <v-row dense>
               <v-col cols="6">
-                <v-text-field v-model="form.pickupDate" type="date" label="Pickup Date *" prepend-inner-icon="mdi-calendar-outline" :error-messages="errors.pickupDate" />
+                <v-text-field v-model="form.pickupDate" type="date" :min="todayKey()" label="Pickup Date *" prepend-inner-icon="mdi-calendar-outline" :error-messages="errors.pickupDate" />
               </v-col>
               <v-col cols="6">
                 <v-select v-model="form.pickupTime" :items="pickupTimes" label="Pickup Time *" prepend-inner-icon="mdi-clock-outline" :error-messages="errors.pickupTime" />
@@ -84,7 +104,26 @@
           </div>
 
           <div>
-            <h3 class="font-display mb-4" style="color: var(--vio-purple)">Payment Method</h3>
+            <h3 class="font-display mb-4" style="color: var(--vio-purple)">Payment</h3>
+            <div class="tab-toggle mb-2">
+              <button class="tab-btn" :class="{ active: payOption === 'now' }" @click="payOption = 'now'">✅ Pay now</button>
+              <button class="tab-btn" :class="{ active: payOption === 'later' }" :disabled="!bookedDate" @click="payOption = 'later'">🕒 Pay later</button>
+            </div>
+            <p v-if="!bookedDate" class="text-caption mb-6" style="color: var(--vio-text-muted)">
+              Pay later is available when you book a {{ tab === "pickup" ? "pickup" : "delivery" }} date.
+            </p>
+            <div v-else class="mb-6" />
+
+            <div v-if="payOption === 'later'" class="pa-6 rounded-lg" style="background-color: var(--vio-cream)">
+              <p class="font-display mb-3" style="color: var(--vio-purple)">Reserve now, pay before your gift date</p>
+              <div v-for="line in payLaterNotes" :key="line" class="d-flex ga-3 mb-2">
+                <v-icon icon="mdi-check-circle-outline" size="16" color="primary" class="mt-1" />
+                <p class="text-body-2 ma-0" style="color: var(--vio-purple-dark)">{{ line }}</p>
+              </div>
+            </div>
+
+            <template v-else>
+            <h4 class="font-display mb-3" style="color: var(--vio-purple)">Payment Method</h4>
             <div class="tab-toggle mb-6">
               <button class="tab-btn" :class="{ active: payMethod === 'card' }" @click="payMethod = 'card'">💳 Pay by Card</button>
               <button class="tab-btn" :class="{ active: payMethod === 'transfer' }" @click="payMethod = 'transfer'">🏦 Bank Transfer</button>
@@ -111,6 +150,7 @@
                 Your order will be confirmed once payment is received (usually within 1 business hour).
               </p>
             </div>
+            </template>
           </div>
         </v-col>
 
@@ -133,17 +173,31 @@
                 <span style="color: var(--vio-purple-dark)">{{ tab === "pickup" ? "Pickup" : "Delivery" }}</span>
                 <span style="color: var(--vio-success)">{{ tab === "pickup" ? "Free" : "TBC" }}</span>
               </div>
+              <div v-if="bookedDate" class="d-flex justify-space-between">
+                <span style="color: var(--vio-purple-dark)">{{ tab === "pickup" ? "Pickup date" : "Delivery date" }}</span>
+                <span class="text-right" style="color: var(--vio-purple)">{{ formatDateKey(bookedDate) }}</span>
+              </div>
               <div class="d-flex justify-space-between pt-3" style="border-top: 1px solid rgba(46,27,48,0.15)">
                 <span class="font-display" style="color: var(--vio-purple)">Total</span>
                 <span class="font-display" style="color: var(--vio-purple); font-size: 1.5rem">₦{{ cartTotal.toFixed(2) }}</span>
               </div>
+              <template v-if="payOption === 'later'">
+                <div class="d-flex justify-space-between">
+                  <span style="color: var(--vio-purple-dark)">Due today</span>
+                  <span style="color: var(--vio-success)">₦0.00</span>
+                </div>
+                <div class="d-flex justify-space-between">
+                  <span style="color: var(--vio-purple-dark)">Due by {{ formatDateKey(bookedDate, { day: "numeric", month: "short" }) }}</span>
+                  <span style="color: var(--vio-purple)">₦{{ cartTotal.toFixed(2) }}</span>
+                </div>
+              </template>
             </div>
 
-            <v-btn block size="x-large" color="primary" rounded="lg" class="text-none" :loading="isProcessing" prepend-icon="mdi-lock-outline" @click="handlePay">
-              {{ isProcessing ? "Processing..." : `Pay Now — ₦${cartTotal.toFixed(2)}` }}
+            <v-btn block size="x-large" color="primary" rounded="lg" class="text-none" :loading="isProcessing" :prepend-icon="payOption === 'later' ? 'mdi-calendar-check' : 'mdi-lock-outline'" @click="handlePay">
+              {{ isProcessing ? "Processing..." : payOption === "later" ? "Confirm Booking — Pay Later" : `Pay Now — ₦${cartTotal.toFixed(2)}` }}
             </v-btn>
             <p class="text-caption text-center mt-4" style="color: var(--vio-text-muted)">
-              Encrypted &amp; secure. We never store your card details.
+              {{ payOption === "later" ? "No payment taken today." : "Encrypted & secure. We never store your card details." }}
             </p>
           </v-card>
         </v-col>
@@ -153,17 +207,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from "vue";
+import { ref, reactive, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import SimpleHeader from "@/components/SimpleHeader.vue";
 import { useCartStore } from "@/store/cart";
-import { useAdminStore, makeOrderNumber } from "@/store/admin";
+import { useAdminStore, makeOrderNumber, todayKey, formatDateKey } from "@/store/admin";
 
 const router = useRouter();
 const cart = useCartStore();
 const admin = useAdminStore();
 
 const tab = ref("delivery");
+const when = ref("asap"); // delivery only: "asap" | "date"
+const payOption = ref("now"); // "now" | "later"
 const payMethod = ref("card");
 const isProcessing = ref(false);
 const cartTotal = computed(() => cart.cartTotal || cart.subtotal);
@@ -182,8 +238,33 @@ const form = reactive({
   billingAddress: "",
   cardNumber: "", expiry: "", cvv: "", cardName: "",
   pickupDate: "", pickupTime: "",
+  deliveryDate: "",
 });
 const errors = reactive({});
+
+// A date picked in "Book a Gift for Later" on the landing page carries through to here.
+if (cart.bookingDate && cart.bookingDate >= todayKey(1)) {
+  when.value = "date";
+  form.deliveryDate = cart.bookingDate;
+  form.pickupDate = cart.bookingDate;
+}
+
+// The date the gift is booked for: a pickup date, or a chosen delivery date.
+const bookedDate = computed(() => {
+  if (tab.value === "pickup") return form.pickupDate || "";
+  return when.value === "date" ? form.deliveryDate : "";
+});
+
+// Pay later needs a date to be due by — fall back to pay now if the date goes away.
+watch(bookedDate, (d) => {
+  if (!d) payOption.value = "now";
+});
+
+const payLaterNotes = computed(() => [
+  "No payment today — your gift is reserved straight away.",
+  `We'll email a secure payment link. Pay by card or bank transfer any time before ${formatDateKey(bookedDate.value, { weekday: "long", day: "numeric", month: "long" })}.`,
+  "Unpaid bookings may be released on the booked date.",
+]);
 
 function validate() {
   Object.keys(errors).forEach((k) => delete errors[k]);
@@ -193,11 +274,16 @@ function validate() {
   if (tab.value === "delivery") {
     if (!form.address.trim()) errors.address = "Required";
     if (!form.city.trim()) errors.city = "Required";
+    if (when.value === "date") {
+      if (!form.deliveryDate) errors.deliveryDate = "Choose a delivery date";
+      else if (form.deliveryDate < todayKey(1)) errors.deliveryDate = "Choose a date from tomorrow onwards";
+    }
   } else {
     if (!form.pickupDate) errors.pickupDate = "Required";
+    else if (form.pickupDate < todayKey()) errors.pickupDate = "Date is in the past";
     if (!form.pickupTime) errors.pickupTime = "Required";
   }
-  if (payMethod.value === "card") {
+  if (payOption.value === "now" && payMethod.value === "card") {
     if (!form.cardNumber.trim()) errors.cardNumber = "Required";
     if (!form.expiry.trim()) errors.expiry = "Required";
     if (!form.cvv.trim()) errors.cvv = "Required";
@@ -217,6 +303,7 @@ function handlePay() {
       quantity: item.quantity,
     }));
     const fulfillmentMethod = tab.value === "pickup" ? "Pickup" : "Delivery";
+    const payLater = payOption.value === "later";
     cart.setOrderDetails({
       ...form,
       orderNumber,
@@ -226,16 +313,22 @@ function handlePay() {
       items,
       fulfillmentMethod,
       tab: tab.value,
+      scheduledFor: bookedDate.value || null,
+      paymentOption: payOption.value,
     });
     // Card details are deliberately left out of the admin record.
     admin.recordOrder({
       orderNumber,
-      customer: { name: form.fullName, email: form.email, phone: form.phone, city: form.city },
+      customer: { name: form.fullName, email: form.email, phone: form.phone, city: tab.value === "pickup" ? "" : form.city },
       items,
       subtotal: cart.subtotal,
       total: cartTotal.value,
       fulfillmentMethod,
-      paymentMethod: payMethod.value === "card" ? "Card" : "Bank Transfer",
+      scheduledFor: bookedDate.value || null,
+      scheduledTime: tab.value === "pickup" ? form.pickupTime : "",
+      paymentOption: payOption.value,
+      paymentMethod: payLater ? "Pay later" : payMethod.value === "card" ? "Card" : "Bank Transfer",
+      paymentStatus: payLater ? "Unpaid" : "Paid",
     });
     router.push("/order-complete");
   }, 2200);
@@ -254,6 +347,9 @@ function handlePay() {
 }
 .tab-btn.active {
   background-color: var(--vio-purple); color: #faf7f0;
+}
+.tab-btn:disabled {
+  color: var(--vio-text-muted); background: var(--vio-light-gray); cursor: not-allowed;
 }
 .summary-sticky { position: sticky; top: 96px; }
 .summary-items { border-bottom: 1px solid rgba(46,27,48,0.15); padding-bottom: 20px; }
