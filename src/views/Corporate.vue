@@ -118,10 +118,10 @@
               <v-icon icon="mdi-office-building-outline" />Company Information
             </h4>
             <v-row dense>
-              <v-col cols="12" sm="6"><v-text-field v-model="form.companyName" label="Company Name *" placeholder="Acme Corp" required /></v-col>
-              <v-col cols="12" sm="6"><v-text-field v-model="form.contactName" label="Contact Name *" placeholder="Jane Smith" required /></v-col>
-              <v-col cols="12" sm="6"><v-text-field v-model="form.email" type="email" label="Email *" placeholder="jane@acme.com" required /></v-col>
-              <v-col cols="12" sm="6"><v-text-field v-model="form.phone" type="tel" label="Phone" placeholder="+44 7XXX XXXXXX" /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="form.companyName" label="Company Name *" placeholder="Acme Ltd" required /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="form.contactName" label="Contact Name *" placeholder="Adaeze Okafor" required /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="form.email" type="email" label="Email *" placeholder="adaeze@acme.ng" required /></v-col>
+              <v-col cols="12" sm="6"><v-text-field v-model="form.phone" type="tel" label="Phone" placeholder="0803 123 4567" /></v-col>
             </v-row>
           </v-card>
 
@@ -152,7 +152,8 @@
             </v-row>
           </v-card>
 
-          <v-btn type="submit" size="x-large" color="primary" rounded="lg" class="text-none" prepend-icon="mdi-account-group-outline">
+          <v-alert v-if="submitError" type="error" variant="tonal" density="compact">{{ submitError }}</v-alert>
+          <v-btn type="submit" size="x-large" color="primary" rounded="lg" class="text-none" prepend-icon="mdi-account-group-outline" :loading="submitting">
             Submit Corporate Enquiry
           </v-btn>
         </form>
@@ -167,10 +168,11 @@
 import { ref, reactive, computed } from "vue";
 import SimpleHeader from "@/components/SimpleHeader.vue";
 import SimpleFooter from "@/components/SimpleFooter.vue";
-import { allProducts } from "@/data/products";
+import { useProductsStore } from "@/store/products";
 import { useAdminStore } from "@/store/admin";
 
-const corporateProducts = allProducts.filter((p) => p.category === "corporate");
+const productsStore = useProductsStore();
+const corporateProducts = computed(() => productsStore.visible.filter((p) => p.category === "corporate"));
 
 const stats = [
   ["500+", "Corporate Orders"],
@@ -195,9 +197,45 @@ const form = reactive({
 
 const admin = useAdminStore();
 
-function handleSubmit() {
-  admin.recordEnquiry({ ...form, quantity: Number(form.quantity) || 0 });
-  formSent.value = true;
+const submitting = ref(false);
+const submitError = ref("");
+
+async function handleSubmit() {
+  submitError.value = "";
+  const quantity = Math.floor(Number(form.quantity));
+  if (!form.companyName.trim() || !form.contactName.trim() || !form.email.trim()) {
+    submitError.value = "Please fill in company, contact name and email.";
+    return;
+  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) {
+    submitError.value = "Please enter a valid email address.";
+    return;
+  }
+  if (!(quantity > 0)) {
+    submitError.value = "Please enter how many gifts you need.";
+    return;
+  }
+  submitting.value = true;
+  try {
+    const str = (v) => String(v ?? "").trim();
+    await admin.recordEnquiry({
+      companyName: str(form.companyName),
+      contactName: str(form.contactName),
+      email: str(form.email).toLowerCase(),
+      phone: str(form.phone),
+      quantity,
+      budget: str(form.budget),
+      occasion: str(form.occasion),
+      requirements: str(form.requirements),
+      tier: str(form.tier),
+    });
+    formSent.value = true;
+  } catch (err) {
+    console.error("Enquiry failed", err);
+    submitError.value = "Sorry, we couldn't send your enquiry. Please try again or message us on WhatsApp.";
+  } finally {
+    submitting.value = false;
+  }
 }
 </script>
 

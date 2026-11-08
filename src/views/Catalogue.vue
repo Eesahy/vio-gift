@@ -69,7 +69,10 @@
           <span v-if="activeCategory !== 'all'"> in {{ categories.find((c) => c.id === activeCategory)?.label }}</span>
         </p>
 
-        <div v-if="filtered.length === 0" class="text-center py-16">
+        <div v-if="!productsStore.loaded" class="text-center py-16">
+          <v-progress-circular indeterminate color="primary" />
+        </div>
+        <div v-else-if="filtered.length === 0" class="text-center py-16">
           <p style="color: var(--vio-purple-dark)">No products found. Try a different search or category.</p>
         </div>
 
@@ -100,7 +103,9 @@ import { ref, computed } from "vue";
 import SimpleHeader from "@/components/SimpleHeader.vue";
 import SimpleFooter from "@/components/SimpleFooter.vue";
 import ProductCard from "@/components/ProductCard.vue";
-import { allProducts } from "@/data/products";
+import { useProductsStore } from "@/store/products";
+
+const productsStore = useProductsStore();
 
 const categories = [
   { id: "all", label: "All Products", emoji: "✨" },
@@ -132,14 +137,17 @@ function toggleBundle(id) {
 }
 
 const filtered = computed(() => {
-  let products = allProducts;
+  let products = productsStore.visible;
   if (activeCategory.value !== "all") {
     products = products.filter((p) => p.category === activeCategory.value);
   }
   if (search.value.trim()) {
     const q = search.value.toLowerCase();
     products = products.filter(
-      (p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.items.some((i) => i.toLowerCase().includes(q))
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q) ||
+        (p.items || []).some((i) => i.toLowerCase().includes(q))
     );
   }
   if (sort.value === "price-asc") return [...products].sort((a, b) => a.price - b.price);

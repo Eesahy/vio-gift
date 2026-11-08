@@ -8,7 +8,7 @@
 import { computed } from "vue";
 
 const props = defineProps({
-  // "Paid" | "Unpaid" | "Overdue" | "Void" — see paymentState() in the admin store
+  // "Paid" | "Unpaid" | "Overdue" | "Awaiting" | "Void" — see paymentState() in the admin store
   state: { type: String, required: true },
   menu: { type: Boolean, default: false },
 });
@@ -17,6 +17,7 @@ const META = {
   Paid: { color: "success", icon: "mdi-check-circle-outline", label: "Paid" },
   Unpaid: { color: "warning", icon: "mdi-clock-outline", label: "Pay later" },
   Overdue: { color: "error", icon: "mdi-alert-circle-outline", label: "Overdue" },
+  Awaiting: { color: "info", icon: "mdi-timer-sand", label: "Awaiting payment" },
   Void: { color: "grey", icon: "mdi-minus-circle-outline", label: "Not due" },
 };
 

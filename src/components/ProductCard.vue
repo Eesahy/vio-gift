@@ -27,7 +27,7 @@
 
         <div class="d-flex flex-wrap ga-1 mb-4">
           <span
-            v-for="item in product.items.slice(0, 3)"
+            v-for="item in (product.items || []).slice(0, 3)"
             :key="item"
             class="text-caption px-2 py-1 rounded-pill"
             style="background: var(--vio-cream); color: var(--vio-purple-dark)"
@@ -35,7 +35,7 @@
             {{ item }}
           </span>
           <span
-            v-if="product.items.length > 3"
+            v-if="product.items?.length > 3"
             class="text-caption px-2 py-1 rounded-pill"
             style="background: var(--vio-cream); color: var(--vio-purple)"
           >

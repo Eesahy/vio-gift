@@ -64,25 +64,25 @@
                 <v-text-field v-model="form.email" type="email" label="Email *" placeholder="you@email.com" prepend-inner-icon="mdi-email-outline" :error-messages="errors.email" />
               </v-col>
               <v-col cols="12">
-                <v-text-field v-model="form.phone" type="tel" label="Phone *" placeholder="+44 7XXX XXXXXX" prepend-inner-icon="mdi-phone-outline" :error-messages="errors.phone" />
+                <v-text-field v-model="form.phone" type="tel" label="Phone *" placeholder="0803 123 4567" prepend-inner-icon="mdi-phone-outline" :error-messages="errors.phone" />
               </v-col>
             </v-row>
           </div>
 
           <div v-if="tab === 'delivery'">
-            <h3 class="font-display mb-4" style="color: var(--vio-purple)">Shipping Address</h3>
+            <h3 class="font-display mb-4" style="color: var(--vio-purple)">Delivery Address</h3>
             <v-row dense>
               <v-col cols="12">
-                <v-text-field v-model="form.address" label="Street Address *" placeholder="123 Gift Lane" prepend-inner-icon="mdi-map-marker-outline" :error-messages="errors.address" />
+                <v-text-field v-model="form.address" label="Street Address *" placeholder="12 Admiralty Way" prepend-inner-icon="mdi-map-marker-outline" :error-messages="errors.address" />
               </v-col>
-              <v-col cols="6">
-                <v-text-field v-model="form.city" label="City *" placeholder="London" :error-messages="errors.city" />
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="form.city" label="City / Area *" placeholder="Lekki" :error-messages="errors.city" />
               </v-col>
-              <v-col cols="6">
-                <v-text-field v-model="form.postcode" label="Postcode" placeholder="SW1A 1AA" />
+              <v-col cols="12" sm="6">
+                <v-autocomplete v-model="form.state" :items="NIGERIAN_STATES" label="State *" :error-messages="errors.state" />
               </v-col>
               <v-col cols="12">
-                <v-text-field v-model="form.billingAddress" label="Billing Address (if different)" placeholder="Leave blank if same as shipping" />
+                <v-text-field v-model="form.landmark" label="Nearest Landmark" placeholder="e.g. Opposite the filling station" />
               </v-col>
             </v-row>
           </div>
@@ -122,35 +122,20 @@
               </div>
             </div>
 
-            <template v-else>
-            <h4 class="font-display mb-3" style="color: var(--vio-purple)">Payment Method</h4>
-            <div class="tab-toggle mb-6">
-              <button class="tab-btn" :class="{ active: payMethod === 'card' }" @click="payMethod = 'card'">💳 Pay by Card</button>
-              <button class="tab-btn" :class="{ active: payMethod === 'transfer' }" @click="payMethod = 'transfer'">🏦 Bank Transfer</button>
+            <div v-else class="pa-6 rounded-lg" style="background-color: var(--vio-cream)">
+              <p class="font-display mb-3" style="color: var(--vio-purple)">Pay securely with Paystack</p>
+              <div v-for="line in payNowNotes" :key="line" class="d-flex ga-3 mb-2">
+                <v-icon icon="mdi-shield-check-outline" size="16" color="primary" class="mt-1" />
+                <p class="text-body-2 ma-0" style="color: var(--vio-purple-dark)">{{ line }}</p>
+              </div>
             </div>
 
-            <div v-if="payMethod === 'card'">
-              <v-text-field v-model="form.cardNumber" label="Card Number *" placeholder="1234 5678 9012 3456" prepend-inner-icon="mdi-credit-card-outline" :error-messages="errors.cardNumber" />
-              <v-row dense>
-                <v-col cols="4"><v-text-field v-model="form.expiry" label="Expiry *" placeholder="MM/YY" :error-messages="errors.expiry" /></v-col>
-                <v-col cols="4"><v-text-field v-model="form.cvv" label="CVV *" placeholder="123" :error-messages="errors.cvv" /></v-col>
-                <v-col cols="4"><v-text-field v-model="form.cardName" label="Name on Card" placeholder="Full name" /></v-col>
-              </v-row>
-            </div>
-            <div v-else class="pa-6 rounded-lg" style="background-color: var(--vio-cream)">
-              <p class="font-display mb-3" style="color: var(--vio-purple)">Bank Transfer Details</p>
-              <div v-for="[label, value] in bankDetails" :key="label" class="d-flex align-center ga-3 mb-2">
-                <v-icon icon="mdi-office-building-outline" size="16" color="primary" />
-                <p class="text-body-2 ma-0">
-                  <span style="color: var(--vio-purple-dark)">{{ label }}: </span>
-                  <strong style="color: var(--vio-purple)">{{ value }}</strong>
-                </p>
-              </div>
-              <p class="text-caption pt-2" style="color: var(--vio-text-muted)">
-                Your order will be confirmed once payment is received (usually within 1 business hour).
-              </p>
-            </div>
-            </template>
+            <v-alert v-if="payError" type="warning" variant="tonal" class="mt-4">
+              {{ payError }}
+              <template v-if="pendingOrder" #append>
+                <v-btn size="small" variant="text" class="text-none" :loading="isProcessing" @click="handlePay">Try again</v-btn>
+              </template>
+            </v-alert>
           </div>
         </v-col>
 
@@ -167,7 +152,11 @@
             <div class="d-flex flex-column ga-2 mb-5 text-body-2">
               <div class="d-flex justify-space-between">
                 <span style="color: var(--vio-purple-dark)">Items</span>
-                <span style="color: var(--vio-purple)">₦{{ cartTotal.toFixed(2) }}</span>
+                <span style="color: var(--vio-purple)">₦{{ cart.subtotal.toFixed(2) }}</span>
+              </div>
+              <div v-if="giftExtra" class="d-flex justify-space-between">
+                <span style="color: var(--vio-purple-dark)">Gift {{ giftOption === "bag" ? "bag" : "wrap" }}</span>
+                <span style="color: var(--vio-purple)">₦{{ giftExtra.toFixed(2) }}</span>
               </div>
               <div class="d-flex justify-space-between">
                 <span style="color: var(--vio-purple-dark)">{{ tab === "pickup" ? "Pickup" : "Delivery" }}</span>
@@ -193,11 +182,11 @@
               </template>
             </div>
 
-            <v-btn block size="x-large" color="primary" rounded="lg" class="text-none" :loading="isProcessing" :prepend-icon="payOption === 'later' ? 'mdi-calendar-check' : 'mdi-lock-outline'" @click="handlePay">
+            <v-btn block size="x-large" color="primary" rounded="lg" class="text-none" :loading="isProcessing" :disabled="!cart.items.length" :prepend-icon="payOption === 'later' ? 'mdi-calendar-check' : 'mdi-lock-outline'" @click="handlePay">
               {{ isProcessing ? "Processing..." : payOption === "later" ? "Confirm Booking — Pay Later" : `Pay Now — ₦${cartTotal.toFixed(2)}` }}
             </v-btn>
             <p class="text-caption text-center mt-4" style="color: var(--vio-text-muted)">
-              {{ payOption === "later" ? "No payment taken today." : "Encrypted & secure. We never store your card details." }}
+              {{ payOption === "later" ? "No payment taken today." : "Payments are processed by Paystack. We never see or store your card details." }}
             </p>
           </v-card>
         </v-col>
@@ -210,33 +199,40 @@
 import { ref, reactive, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import SimpleHeader from "@/components/SimpleHeader.vue";
-import { useCartStore } from "@/store/cart";
-import { useAdminStore, makeOrderNumber, todayKey, formatDateKey } from "@/store/admin";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "@/firebase";
+import { useCartStore, GIFT_EXTRAS } from "@/store/cart";
+import { todayKey, formatDateKey } from "@/store/admin";
+import { NIGERIAN_STATES } from "@/data/nigeria";
+import { payWithPaystack, friendlyError } from "@/lib/paystack";
 
 const router = useRouter();
 const cart = useCartStore();
-const admin = useAdminStore();
+cart.reload();
 
 const tab = ref("delivery");
 const when = ref("asap"); // delivery only: "asap" | "date"
 const payOption = ref("now"); // "now" | "later"
-const payMethod = ref("card");
 const isProcessing = ref(false);
-const cartTotal = computed(() => cart.cartTotal || cart.subtotal);
+const payError = ref("");
+// Set once the server has created the order, so a retry reopens payment instead of ordering twice.
+const pendingOrder = ref(null);
+
+const giftOption = computed(() => cart.giftingOptions?.giftOption || "");
+const giftExtra = computed(() => GIFT_EXTRAS[giftOption.value] || 0);
+// Preview only: the server recalculates the real total from live prices.
+const cartTotal = computed(() => cart.subtotal + giftExtra.value);
 
 const pickupTimes = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
-const bankDetails = [
-  ["Account Name", "VioGiftStore Ltd"],
-  ["Sort Code", "12-34-56"],
-  ["Account Number", "12345678"],
-  ["Reference", "Your order email"],
+const payNowNotes = [
+  "Pay by card, bank transfer or USSD in Paystack's secure window.",
+  "Your card details go straight to Paystack and never touch our site.",
+  "You'll get an email confirmation as soon as payment goes through.",
 ];
 
 const form = reactive({
   fullName: "", email: "", phone: "",
-  address: "", city: "", postcode: "",
-  billingAddress: "",
-  cardNumber: "", expiry: "", cvv: "", cardName: "",
+  address: "", city: "", state: "", landmark: "",
   pickupDate: "", pickupTime: "",
   deliveryDate: "",
 });
@@ -271,9 +267,11 @@ function validate() {
   if (!form.fullName.trim()) errors.fullName = "Required";
   if (!form.email.trim()) errors.email = "Required";
   if (!form.phone.trim()) errors.phone = "Required";
+  if (form.email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) errors.email = "Enter a valid email";
   if (tab.value === "delivery") {
     if (!form.address.trim()) errors.address = "Required";
     if (!form.city.trim()) errors.city = "Required";
+    if (!form.state) errors.state = "Required";
     if (when.value === "date") {
       if (!form.deliveryDate) errors.deliveryDate = "Choose a delivery date";
       else if (form.deliveryDate < todayKey(1)) errors.deliveryDate = "Choose a date from tomorrow onwards";
@@ -283,55 +281,68 @@ function validate() {
     else if (form.pickupDate < todayKey()) errors.pickupDate = "Date is in the past";
     if (!form.pickupTime) errors.pickupTime = "Required";
   }
-  if (payOption.value === "now" && payMethod.value === "card") {
-    if (!form.cardNumber.trim()) errors.cardNumber = "Required";
-    if (!form.expiry.trim()) errors.expiry = "Required";
-    if (!form.cvv.trim()) errors.cvv = "Required";
-  }
   return Object.keys(errors).length === 0;
 }
 
-function handlePay() {
+// Editing the order after a failed payment starts a fresh one; the old one is released automatically.
+watch([form, tab, when, payOption, () => cart.items], () => {
+  pendingOrder.value = null;
+}, { deep: true });
+
+function goToConfirmation({ orderNumber, token }) {
+  router.push({ path: "/order-complete", query: { order: orderNumber, t: token } });
+}
+
+async function handlePay() {
+  payError.value = "";
   if (!validate()) return;
   isProcessing.value = true;
-  setTimeout(() => {
-    const orderNumber = makeOrderNumber();
-    const items = cart.items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    }));
-    const fulfillmentMethod = tab.value === "pickup" ? "Pickup" : "Delivery";
-    const payLater = payOption.value === "later";
-    cart.setOrderDetails({
-      ...form,
-      orderNumber,
-      total: cartTotal.value,
-      subtotal: cart.subtotal,
-      itemCount: cart.itemCount,
-      items,
-      fulfillmentMethod,
-      tab: tab.value,
-      scheduledFor: bookedDate.value || null,
-      paymentOption: payOption.value,
-    });
-    // Card details are deliberately left out of the admin record.
-    admin.recordOrder({
-      orderNumber,
-      customer: { name: form.fullName, email: form.email, phone: form.phone, city: tab.value === "pickup" ? "" : form.city },
-      items,
-      subtotal: cart.subtotal,
-      total: cartTotal.value,
-      fulfillmentMethod,
-      scheduledFor: bookedDate.value || null,
-      scheduledTime: tab.value === "pickup" ? form.pickupTime : "",
-      paymentOption: payOption.value,
-      paymentMethod: payLater ? "Pay later" : payMethod.value === "card" ? "Card" : "Bank Transfer",
-      paymentStatus: payLater ? "Unpaid" : "Paid",
-    });
-    router.push("/order-complete");
-  }, 2200);
+  try {
+    let accessCode;
+    if (pendingOrder.value) {
+      const { data } = await httpsCallable(functions, "startPayment")({ orderNumber: pendingOrder.value.orderNumber, token: pendingOrder.value.token });
+      if (data.alreadyPaid) return goToConfirmation(pendingOrder.value);
+      accessCode = data.accessCode;
+    } else {
+      const isPickup = tab.value === "pickup";
+      const { data } = await httpsCallable(functions, "createOrder")({
+        items: cart.items.map(({ id, quantity }) => ({ id, quantity })),
+        customer: {
+          name: form.fullName,
+          email: form.email,
+          phone: form.phone,
+          address: isPickup ? "" : form.address,
+          city: isPickup ? "" : form.city,
+          state: isPickup ? "" : form.state,
+          landmark: isPickup ? "" : form.landmark,
+        },
+        fulfillment: tab.value,
+        scheduledFor: bookedDate.value || null,
+        scheduledTime: isPickup ? form.pickupTime : "",
+        paymentOption: payOption.value,
+        giftOption: giftOption.value,
+        gifting: {
+          from: cart.giftingOptions?.giftFrom || "",
+          to: cart.giftingOptions?.giftTo || "",
+          note: cart.giftingOptions?.giftNote || "",
+        },
+        orderNote: cart.orderNote,
+      });
+      pendingOrder.value = { orderNumber: data.orderNumber, token: data.payToken };
+      if (data.paymentOption === "later") return goToConfirmation(pendingOrder.value);
+      accessCode = data.accessCode;
+    }
+
+    isProcessing.value = false;
+    await payWithPaystack(accessCode);
+    goToConfirmation(pendingOrder.value);
+  } catch (err) {
+    payError.value = err.cancelled
+      ? "Payment wasn't completed. Your items are held for an hour, so you can try again."
+      : friendlyError(err);
+  } finally {
+    isProcessing.value = false;
+  }
 }
 </script>
 

@@ -9,7 +9,9 @@ const IMG = {
   snacks: "https://images.unsplash.com/photo-1723962807917-ffab0600929c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
 };
 
-export const allProducts = [
+// Starter catalogue, only used by functions/scripts/seed-products.js.
+// The live catalogue is in Firestore and managed from the admin Products tab.
+export const seedProducts = [
   // RAMADAN
   { id: "ram-1", name: "Sacred Serenity Box", description: "Premium dates, herbal tea, organic honey, and incense for peaceful moments during the holy month.", price: 85, image: IMG.ramadan, image2: IMG.tea, theme: "ramadan", tags: ["Best Seller", "Ramadan Special"], items: ["Herbal Tea", "Organic Honey", "Artisanal Incense", "Premium Dates"], perfectFor: ["Ramadan gifting", "Family & friends", "Colleagues"], stock: 12, category: "events" },
   { id: "ram-2", name: "Blessed Ramadan Gift", description: "Elegant collection of wellness essentials for the holy month.", price: 95, image: IMG.tea, image2: IMG.honey, theme: "ramadan", tags: ["Limited Edition"], items: ["Herbal Tea", "Organic Honey", "Healthy Snacks", "Prayer Mat"], perfectFor: ["Family", "Close friends", "Religious occasions"], stock: 8, category: "events" },
@@ -101,15 +103,6 @@ export const allProducts = [
   // CONGRATULATIONS
   { id: "con-1", name: "Celebration Wellness Bundle", description: "Mark every milestone with premium curated wellness.", price: 85, image: IMG.luxury, image2: IMG.snacks, theme: "congratulations", tags: ["Popular"], items: ["Celebration Tea", "Honey", "Gourmet Snacks", "Gold Ribbon Box"], perfectFor: ["Any achievement", "New ventures", "Personal milestones"], stock: 16, category: "events" },
 ];
-
-export const getProductsByTheme = (theme) =>
-  allProducts.filter((p) => p.theme === theme);
-
-export const getProductById = (id) =>
-  allProducts.find((p) => p.id === id);
-
-export const getProductsByCategory = (category) =>
-  category === "all" ? allProducts : allProducts.filter((p) => p.category === category);
 
 export const themeCards = [
   // General Themes

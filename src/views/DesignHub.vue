@@ -103,7 +103,7 @@
           Contact us for custom branding, corporate packages, or special design requests
         </p>
         <div class="d-flex flex-column flex-sm-row ga-4 justify-center">
-          <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" class="cta-purple">WhatsApp Us</a>
+          <a :href="whatsappLink()" target="_blank" rel="noopener noreferrer" class="cta-purple">WhatsApp Us</a>
           <a href="https://instagram.com/viogiftstore" target="_blank" rel="noopener noreferrer" class="cta-plum">Instagram</a>
         </div>
       </v-container>
@@ -118,6 +118,7 @@ import SimpleHeader from "@/components/SimpleHeader.vue";
 import SimpleFooter from "@/components/SimpleFooter.vue";
 import ProductLabel from "@/components/ProductLabel.vue";
 import ComingSoonFlier from "@/components/ComingSoonFlier.vue";
+import { whatsappLink } from "@/data/nigeria";
 
 const quickNav = [
   { label: "Product Labels", icon: "mdi-package-variant-closed", href: "#labels" },

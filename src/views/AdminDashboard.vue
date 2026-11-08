@@ -12,24 +12,27 @@
         <v-btn to="/" variant="outlined" color="#faf7f0" size="small" class="text-none" prepend-icon="mdi-storefront-outline">
           View store
         </v-btn>
+        <v-menu>
+          <template #activator="{ props: mp }">
+            <v-btn v-bind="mp" icon="mdi-account-circle-outline" variant="text" color="#faf7f0" size="small" aria-label="Account" />
+          </template>
+          <v-list density="compact">
+            <v-list-item :subtitle="auth.user?.email" title="Signed in as" />
+            <v-divider />
+            <v-list-item prepend-icon="mdi-logout" title="Sign out" @click="handleSignOut" />
+          </v-list>
+        </v-menu>
       </v-container>
     </header>
 
     <v-container fluid class="py-6" style="max-width: 1440px">
-      <v-alert
-        v-if="admin.hasSampleData"
-        type="info"
-        variant="tonal"
-        density="compact"
-        class="mb-6"
-        icon="mdi-flask-outline"
-      >
-        Showing <strong>sample data</strong> alongside real orders so the dashboard has something to display.
-        Real checkouts and corporate enquiries are recorded automatically.
-        <template #append>
-          <v-btn size="small" variant="text" class="text-none" @click="admin.clearSampleData()">Clear sample data</v-btn>
-        </template>
+      <v-alert v-if="admin.error || productsStore.error" type="error" variant="tonal" density="compact" class="mb-6">
+        Could not load live data: {{ admin.error || productsStore.error }}
       </v-alert>
+      <v-alert v-else-if="productsStore.loaded && !productsStore.items.length" type="info" variant="tonal" density="compact" class="mb-6">
+        No products yet. Add one from the <strong>Products</strong> tab below, or run <code>npm run seed</code> in the <code>functions</code> folder to import the starter catalogue.
+      </v-alert>
+      <div v-if="!admin.loaded" class="d-flex justify-center py-4"><v-progress-linear indeterminate color="primary" rounded /></div>
 
       <!-- Filters: one row above everything they affect -->
       <div class="d-flex align-center flex-wrap ga-3 mb-6">
@@ -242,7 +245,7 @@
             Orders <v-badge v-if="openOrders" :content="openOrders" color="warning" inline />
           </v-tab>
           <v-tab value="inventory" class="text-none">
-            Inventory <v-badge v-if="lowStockCount" :content="lowStockCount" color="error" inline />
+            Products <v-badge v-if="lowStockCount" :content="lowStockCount" color="error" inline />
           </v-tab>
           <v-tab value="corporate" class="text-none">
             Corporate enquiries <v-badge v-if="newEnquiries" :content="newEnquiries" color="primary" inline />
@@ -313,13 +316,13 @@
                       prepend-icon="mdi-check-circle-outline"
                       :title="`Mark paid · ${m}`"
                       :active="item.paymentStatus === 'Paid' && item.paymentMethod === m"
-                      @click="admin.markPaid(item.orderNumber, m)"
+                      @click="admin.markPaid(item.orderNumber, m).catch(reportError)"
                     />
                     <v-list-item
                       v-if="item.paymentStatus === 'Paid'"
                       prepend-icon="mdi-clock-outline"
                       title="Mark unpaid (pay later)"
-                      @click="admin.markUnpaid(item.orderNumber)"
+                      @click="admin.markUnpaid(item.orderNumber).catch(reportError)"
                     />
                   </v-list>
                 </v-menu>
@@ -338,7 +341,7 @@
                       :prepend-icon="orderStatusMeta[s].icon"
                       :title="s"
                       :active="s === item.status"
-                      @click="admin.setOrderStatus(item.orderNumber, s)"
+                      @click="changeOrderStatus(item, s)"
                     />
                   </v-list>
                 </v-menu>
@@ -350,13 +353,25 @@
                       <span>{{ line.quantity }} × {{ line.name }}</span>
                       <span>{{ naira(line.price * line.quantity) }}</span>
                     </div>
+                    <div v-if="item.giftExtra" class="d-flex justify-space-between text-body-2 py-1" style="max-width: 520px">
+                      <span>Gift {{ item.giftOption === "bag" ? "bag" : "wrap" }}</span>
+                      <span>{{ naira(item.giftExtra) }}</span>
+                    </div>
                     <div class="cell-sub mt-2">
                       {{ item.fulfillmentMethod }}<span v-if="item.customer.city"> to {{ item.customer.city }}</span>
-                      · {{ item.paymentOption === "later" ? "Chose pay later" : "Paid at checkout" }}
+                      · {{ item.paymentOption === "later" ? "Chose pay later" : "Pay at checkout" }}
                       <span v-if="item.paymentStatus === 'Paid'"> · paid by {{ item.paymentMethod }}</span>
+                      <span v-if="item.paystackReference"> · Paystack ref {{ item.paystackReference }}</span>
                       <span v-if="item.customer.phone"> · {{ item.customer.phone }}</span>
-                      <span v-if="item.sample"> · sample order</span>
                     </div>
+                    <div v-if="item.customer.address" class="text-body-2 mt-2">
+                      <strong>Address:</strong> {{ item.customer.address }}, {{ item.customer.city }}{{ item.customer.state ? `, ${item.customer.state}` : "" }}
+                    </div>
+                    <div v-if="item.gifting && (item.gifting.to || item.gifting.note)" class="text-body-2 mt-1">
+                      <strong>Gift message:</strong>
+                      <span v-if="item.gifting.to">To {{ item.gifting.to }}</span><span v-if="item.gifting.from"> from {{ item.gifting.from }}</span><span v-if="item.gifting.note">: “{{ item.gifting.note }}”</span>
+                    </div>
+                    <div v-if="item.orderNote" class="text-body-2 mt-1"><strong>Order note:</strong> {{ item.orderNote }}</div>
                   </td>
                 </tr>
               </template>
@@ -377,8 +392,10 @@
                 style="max-width: 320px"
               />
               <v-switch v-model="lowStockOnly" color="primary" label="Low / out of stock only" hide-details density="compact" inset />
+              <v-switch v-model="hiddenOnly" color="primary" label="Hidden only" hide-details density="compact" inset />
               <v-spacer />
-              <span class="cell-sub">{{ allProducts.length }} products · {{ totalStock }} units in stock · stock value {{ naira(stockValue) }}</span>
+              <span class="cell-sub">{{ productsStore.items.length }} products · {{ totalStock }} units in stock · stock value {{ naira(stockValue) }}</span>
+              <v-btn color="primary" rounded="lg" class="text-none" prepend-icon="mdi-plus" @click="openEditor(null)">Add product</v-btn>
             </div>
             <v-data-table
               :headers="inventoryHeaders"
@@ -389,21 +406,49 @@
               hover
             >
               <template #item.name="{ item }">
-                <div class="d-flex align-center ga-3 py-2">
+                <div class="d-flex align-center ga-3 py-2" :class="{ 'hidden-row': !item.visible }">
                   <v-avatar rounded="lg" size="36"><v-img :src="item.image" cover /></v-avatar>
-                  <router-link :to="`/product/${item.id}`" class="product-link">{{ item.name }}</router-link>
+                  <div>
+                    <router-link v-if="item.visible" :to="`/product/${item.id}`" class="product-link">{{ item.name }}</router-link>
+                    <span v-else>{{ item.name }}</span>
+                    <div v-if="!item.visible" class="cell-sub">Hidden from shop</div>
+                  </div>
                 </div>
               </template>
               <template #item.category="{ value }">{{ categoryLabels[value] || value }}</template>
               <template #item.price="{ value }">{{ naira(value) }}</template>
+              <template #item.remaining="{ item }">
+                <v-text-field
+                  :model-value="item.remaining"
+                  type="number"
+                  min="0"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  class="stock-input ml-auto"
+                  :loading="savingStock === item.id"
+                  @change="updateStock(item, $event.target.value)"
+                  @keyup.enter="$event.target.blur()"
+                />
+              </template>
               <template #item.revenue="{ value }">{{ naira(value) }}</template>
               <template #item.stockStatus="{ item }">
                 <v-chip size="small" variant="tonal" :color="stockMeta[item.stockStatus].color" :prepend-icon="stockMeta[item.stockStatus].icon">
                   {{ item.stockStatus }}
                 </v-chip>
               </template>
+              <template #item.actions="{ item }">
+                <div class="d-flex justify-end">
+                  <v-btn icon size="small" variant="text" :title="item.visible ? 'Hide from shop' : 'Show in shop'" @click="productsStore.setVisible(item.id, !item.visible).catch(reportError)">
+                    <v-icon :icon="item.visible ? 'mdi-eye-outline' : 'mdi-eye-off-outline'" />
+                  </v-btn>
+                  <v-btn icon="mdi-pencil-outline" size="small" variant="text" title="Edit" @click="openEditor(item)" />
+                  <v-btn icon="mdi-delete-outline" size="small" variant="text" color="error" title="Delete" @click="confirmDelete = item" />
+                </div>
+              </template>
+              <template #no-data><p class="empty py-6">No products match.</p></template>
             </v-data-table>
-            <p class="cell-sub mt-2">Stock = catalogue stock less units from live (non-sample, non-cancelled) orders. Sold and revenue are all-time.</p>
+            <p class="cell-sub mt-2">Stock goes down automatically when an order is placed and comes back if it is cancelled. Type a new number to restock. Sold and revenue are all-time.</p>
           </v-window-item>
 
           <!-- Corporate enquiries -->
@@ -438,7 +483,7 @@
                       :prepend-icon="enquiryStatusMeta[s].icon"
                       :title="s"
                       :active="s === item.status"
-                      @click="admin.setEnquiryStatus(item.id, s)"
+                      @click="admin.setEnquiryStatus(item.id, s).catch(reportError)"
                     />
                   </v-list>
                 </v-menu>
@@ -457,20 +502,36 @@
         </v-window>
       </v-card>
 
-      <div class="d-flex justify-end mt-4">
-        <v-btn v-if="!admin.hasSampleData" size="small" variant="text" class="text-none" @click="admin.restoreSampleData()">
-          Load sample data
-        </v-btn>
-      </div>
     </v-container>
+
+    <ProductEditor v-model="editorOpen" :product="editingProduct" @saved="notify('Product saved')" />
+
+    <v-dialog :model-value="!!confirmDelete" max-width="420" @update:model-value="confirmDelete = null">
+      <v-card rounded="xl" class="pa-2">
+        <v-card-title class="font-display" style="color: var(--vio-purple)">Delete product?</v-card-title>
+        <v-card-text>
+          <strong>{{ confirmDelete?.name }}</strong> will be removed permanently. Past orders keep their details.
+          If you might sell it again, hide it instead.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" class="text-none" @click="confirmDelete = null">Cancel</v-btn>
+          <v-btn color="error" variant="flat" class="text-none" :loading="deleting" @click="deleteProduct">Delete</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">{{ snackbar.text }}</v-snackbar>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from "vue";
+import { ref, reactive, computed, nextTick, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import TrendChart from "@/components/admin/TrendChart.vue";
 import PaymentChip from "@/components/admin/PaymentChip.vue";
-import { allProducts, themeDisplayNames } from "@/data/products";
+import ProductEditor from "@/components/admin/ProductEditor.vue";
+import { themeDisplayNames } from "@/data/products";
 import {
   useAdminStore,
   ORDER_STATUSES,
@@ -480,9 +541,82 @@ import {
   formatDateKey,
   todayKey,
 } from "@/store/admin";
+import { useProductsStore, PRODUCT_CATEGORIES } from "@/store/products";
+import { useAuthStore } from "@/store/auth";
 
 const admin = useAdminStore();
+const productsStore = useProductsStore();
+const auth = useAuthStore();
+const router = useRouter();
 const DAY = 86400000;
+
+onMounted(() => {
+  admin.subscribe();
+  productsStore.subscribe({ includeHidden: true });
+});
+
+async function handleSignOut() {
+  admin.unsubscribe();
+  await auth.signOut();
+  productsStore.subscribe();
+  router.replace("/admin/login");
+}
+
+const snackbar = reactive({ show: false, text: "", color: "success" });
+function notify(text, color = "success") {
+  Object.assign(snackbar, { show: true, text, color });
+}
+const reportError = (err) => notify(err.message || String(err), "error");
+
+async function changeOrderStatus(order, status) {
+  if (status === order.status) return;
+  try {
+    await admin.setOrderStatus(order.orderNumber, status);
+    const stockNote = status === "Cancelled" ? " · stock returned" : order.status === "Cancelled" ? " · stock taken again" : "";
+    notify(`${order.orderNumber} marked ${status}${stockNote}`);
+  } catch (err) {
+    reportError(err);
+  }
+}
+
+// ── Product management ──
+const editorOpen = ref(false);
+const editingProduct = ref(null);
+const confirmDelete = ref(null);
+const deleting = ref(false);
+const savingStock = ref(null);
+
+function openEditor(product) {
+  editingProduct.value = product ? productsStore.byId(product.id) : null;
+  editorOpen.value = true;
+}
+
+async function updateStock(item, value) {
+  const stock = Math.floor(Number(value));
+  if (!Number.isFinite(stock) || stock < 0 || stock === item.remaining) return;
+  savingStock.value = item.id;
+  try {
+    await productsStore.setStock(item.id, stock);
+    notify(`Stock for ${item.name} set to ${stock}`);
+  } catch (err) {
+    reportError(err);
+  } finally {
+    savingStock.value = null;
+  }
+}
+
+async function deleteProduct() {
+  deleting.value = true;
+  try {
+    await productsStore.remove(confirmDelete.value.id);
+    notify("Product deleted");
+    confirmDelete.value = null;
+  } catch (err) {
+    reportError(err);
+  } finally {
+    deleting.value = false;
+  }
+}
 
 const ranges = [
   { label: "7 days", value: 7 },
@@ -495,8 +629,8 @@ const rangeLabel = computed(() => ranges.find((r) => r.value === rangeDays.value
 const tab = ref("orders");
 const tablesCard = ref(null);
 
-const categoryLabels = { events: "Events & Occasions", health: "Health & Wellness", household: "Household", kids: "Kids", corporate: "Corporate" };
-const productById = Object.fromEntries(allProducts.map((p) => [p.id, p]));
+const categoryLabels = Object.fromEntries(PRODUCT_CATEGORIES.map((c) => [c.id, c.label]));
+const productById = computed(() => Object.fromEntries(productsStore.items.map((p) => [p.id, p])));
 
 const orderStatusMeta = {
   Pending: { color: "warning", icon: "mdi-clock-outline" },
@@ -525,7 +659,8 @@ const pct = (v, max) => `${max ? (v / max) * 100 : 0}%`;
 const formatDate = (iso) =>
   new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 const unitsIn = (o) => o.items.reduce((s, i) => s + i.quantity, 0);
-const isLive = (o) => o.status !== "Cancelled";
+// Pay-now checkouts that were never completed don't count as sales.
+const isLive = (o) => o.status !== "Cancelled" && paymentState(o) !== "Awaiting";
 
 // ── Period selection ──
 const startOfToday = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
@@ -546,7 +681,7 @@ const sumRevenue = (list) => list.reduce((s, o) => s + o.total, 0);
 const delta = (cur, prev) => (rangeDays.value && prev ? ((cur - prev) / prev) * 100 : undefined);
 
 // ── KPIs ──
-const openOrders = computed(() => admin.orders.filter((o) => o.status === "Pending" || o.status === "Processing").length);
+const openOrders = computed(() => admin.orders.filter((o) => isLive(o) && (o.status === "Pending" || o.status === "Processing")).length);
 const newEnquiries = computed(() => admin.enquiries.filter((e) => e.status === "New").length);
 
 const kpis = computed(() => {
@@ -669,7 +804,7 @@ const topProducts = computed(() => productSales.value.slice(0, 7));
 function groupSales(keyOf, labelOf) {
   const map = {};
   productSales.value.forEach((p) => {
-    const key = keyOf(productById[p.id]) || "other";
+    const key = keyOf(productById.value[p.id]) || "other";
     const row = (map[key] ||= { key, label: labelOf(key), revenue: 0, units: 0 });
     row.revenue += p.revenue;
     row.units += p.units;
@@ -695,7 +830,7 @@ const splits = computed(() => {
   return [
     { title: "Fulfilment", rows: split(live, "fulfillmentMethod", ["Delivery", "Pickup"]) },
     { title: "Payment choice", rows: split(live, "paymentOption", ["now", "later"], ["Pay now", "Pay later"]) },
-    { title: "Paid by", rows: split(paid, "paymentMethod", ["Card", "Bank Transfer"]) },
+    { title: "Paid by", rows: split(paid, "paymentMethod", ["Card", "Bank Transfer", "Bank", "USSD"]).filter((r) => r.count) },
   ];
 });
 const topCities = computed(() => {
@@ -743,21 +878,21 @@ const filteredOrders = computed(() => {
 // ── Inventory ──
 const productSearch = ref("");
 const lowStockOnly = ref(false);
+const hiddenOnly = ref(false);
 const inventory = computed(() => {
   const sold = {};
-  const liveSold = {};
   admin.orders.filter(isLive).forEach((o) =>
     o.items.forEach((i) => {
       const row = (sold[i.id] ||= { units: 0, revenue: 0 });
       row.units += i.quantity;
       row.revenue += i.price * i.quantity;
-      if (!o.sample) liveSold[i.id] = (liveSold[i.id] || 0) + i.quantity;
     })
   );
-  return allProducts.map((p) => {
-    const remaining = Math.max(p.stock - (liveSold[p.id] || 0), 0);
+  return productsStore.items.map((p) => {
+    const remaining = Math.max(p.stock || 0, 0);
     return {
       ...p,
+      visible: p.visible !== false,
       themeLabel: themeDisplayNames[p.theme] || p.theme,
       remaining,
       sold: sold[p.id]?.units || 0,
@@ -778,11 +913,15 @@ const inventoryHeaders = [
   { title: "Sold", key: "sold", align: "end" },
   { title: "Revenue", key: "revenue", align: "end" },
   { title: "Status", key: "stockStatus" },
+  { title: "", key: "actions", sortable: false, align: "end" },
 ];
 const filteredInventory = computed(() => {
   const q = (productSearch.value || "").toLowerCase().trim();
   return inventory.value.filter(
-    (p) => (!lowStockOnly.value || p.stockStatus !== "In stock") && (!q || p.name.toLowerCase().includes(q) || p.themeLabel.toLowerCase().includes(q))
+    (p) =>
+      (!lowStockOnly.value || p.stockStatus !== "In stock") &&
+      (!hiddenOnly.value || !p.visible) &&
+      (!q || p.name.toLowerCase().includes(q) || p.themeLabel.toLowerCase().includes(q))
   );
 });
 
@@ -992,6 +1131,12 @@ const enquiryHeaders = [
 }
 .product-link {
   color: var(--vio-purple);
+}
+.hidden-row {
+  opacity: 0.6;
+}
+.stock-input {
+  width: 96px;
 }
 .product-link:hover {
   text-decoration: underline;

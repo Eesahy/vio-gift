@@ -58,7 +58,7 @@
                 <p class="text-caption text-uppercase mb-2" style="color: var(--vio-purple-dark)">Price Range</p>
                 <div class="d-flex align-center ga-3">
                   <span class="text-body-2" style="color: var(--vio-purple)">₦0</span>
-                  <v-slider v-model="priceMax" :min="0" :max="200" hide-details style="width: 160px" color="primary" />
+                  <v-slider v-model="priceMax" :min="0" :max="highestPrice" step="1" hide-details style="width: 160px" color="primary" />
                   <span class="text-body-2" style="color: var(--vio-purple)">₦{{ priceMax }}</span>
                 </div>
               </div>
@@ -78,7 +78,10 @@
 
     <section class="py-12" style="padding-bottom: 96px">
       <v-container>
-        <div v-if="themeProducts.length === 0" class="text-center py-16">
+        <div v-if="!productsStore.loaded" class="text-center py-16">
+          <v-progress-circular indeterminate color="primary" />
+        </div>
+        <div v-else-if="themeProducts.length === 0" class="text-center py-16">
           <p style="color: var(--vio-purple-dark)">No products found. Try adjusting your filters.</p>
         </div>
         <v-row v-else style="max-width: 1300px; margin: 0 auto">
@@ -96,12 +99,19 @@ import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import SimpleHeader from "@/components/SimpleHeader.vue";
 import ProductCard from "@/components/ProductCard.vue";
-import { getProductsByTheme, allProducts, themeDisplayNames } from "@/data/products";
+import { themeDisplayNames } from "@/data/products";
+import { useProductsStore } from "@/store/products";
 
 const route = useRoute();
+const productsStore = useProductsStore();
 const sort = ref("default");
 const filterOpen = ref(false);
-const priceMax = ref(200);
+const highestPrice = computed(() => Math.max(200, ...productsStore.visible.map((p) => p.price)));
+const priceLimit = ref(null);
+const priceMax = computed({
+  get: () => priceLimit.value ?? highestPrice.value,
+  set: (v) => (priceLimit.value = v),
+});
 
 const sortOptions = [
   { label: "Featured", value: "default" },
@@ -112,7 +122,7 @@ const sortOptions = [
 
 const themeProducts = computed(() => {
   const theme = route.params.theme;
-  let products = theme ? getProductsByTheme(theme) : allProducts;
+  let products = theme ? productsStore.byTheme(theme) : productsStore.visible;
   products = products.filter((p) => p.price <= priceMax.value);
 
   if (sort.value === "price-asc") products = [...products].sort((a, b) => a.price - b.price);

@@ -1,0 +1,70 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+
+    function isShortString(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+
+    function validProduct(p) {
+      return p.keys().hasAll(['name', 'price', 'stock', 'visible', 'theme', 'category'])
+        && isShortString(p.name, 1, 120)
+        && (p.price is int || p.price is float) && p.price > 0
+        && p.stock is int && p.stock >= 0
+        && p.visible is bool
+        && isShortString(p.theme, 1, 40)
+        && isShortString(p.category, 1, 40);
+    }
+
+    // Shop visitors only see visible products; admins see everything.
+    match /products/{productId} {
+      allow read: if resource.data.visible == true || isAdmin();
+      allow create, update: if isAdmin() && validProduct(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Orders are only ever created by Cloud Functions (which bypass these rules).
+    // Admins may record manual payments here; status changes go through the
+    // setOrderStatus function so stock is adjusted at the same time.
+    match /orders/{orderNumber} {
+      allow read: if isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['paymentStatus', 'paymentMethod', 'paidAt', 'updatedAt'])
+        && request.resource.data.paymentStatus in ['Paid', 'Unpaid'];
+      allow create, delete: if false;
+    }
+
+    // Anyone can submit a corporate enquiry; only admins can read or manage them.
+    match /enquiries/{enquiryId} {
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow create: if request.resource.data.keys().hasOnly([
+            'companyName', 'contactName', 'email', 'phone', 'quantity', 'budget',
+            'occasion', 'requirements', 'tier', 'status', 'createdAt'])
+        && isShortString(request.resource.data.companyName, 1, 200)
+        && isShortString(request.resource.data.contactName, 1, 200)
+        && isShortString(request.resource.data.email, 3, 200)
+        && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && isShortString(request.resource.data.phone, 0, 40)
+        && request.resource.data.quantity is int
+        && request.resource.data.quantity > 0 && request.resource.data.quantity <= 100000
+        && isShortString(request.resource.data.budget, 0, 100)
+        && isShortString(request.resource.data.occasion, 0, 100)
+        && isShortString(request.resource.data.requirements, 0, 5000)
+        && isShortString(request.resource.data.tier, 0, 40)
+        && request.resource.data.status == 'New'
+        && request.resource.data.createdAt == request.time;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

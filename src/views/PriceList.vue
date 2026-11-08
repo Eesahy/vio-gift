@@ -33,7 +33,7 @@
           </div>
 
           <div class="mt-8 d-flex flex-column flex-sm-row ga-4 justify-center">
-            <a href="https://wa.me/1234567890" target="_blank" rel="noopener noreferrer" class="cta-purple">WhatsApp for Quote</a>
+            <a :href="whatsappLink()" target="_blank" rel="noopener noreferrer" class="cta-purple">WhatsApp for Quote</a>
             <a href="https://instagram.com/viogiftstore" target="_blank" rel="noopener noreferrer" class="cta-plum">Contact via Instagram</a>
           </div>
         </v-card>
@@ -104,6 +104,7 @@
 
 <script setup>
 import SimpleHeader from "@/components/SimpleHeader.vue";
+import { whatsappLink } from "@/data/nigeria";
 
 const customFeatures = [
   { title: "Custom Product Selection", desc: "Choose your own combination of products" },

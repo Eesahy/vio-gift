@@ -1,5 +1,9 @@
 <template>
-  <div v-if="!product" class="min-h-screen d-flex align-center justify-center bg-white">
+  <div v-if="!product && !productsStore.loaded" class="min-h-screen d-flex align-center justify-center bg-white">
+    <v-progress-circular indeterminate color="primary" />
+  </div>
+
+  <div v-else-if="!product" class="min-h-screen d-flex align-center justify-center bg-white">
     <div class="text-center">
       <p class="text-h6 mb-4" style="color: var(--vio-purple-dark)">Product not found</p>
       <router-link to="/" class="hero-btn-solid">Back to Home</router-link>
@@ -91,8 +95,8 @@
           </div>
 
           <div class="d-flex ga-3 mb-8">
-            <v-btn size="x-large" class="flex-grow-1 text-none" color="primary" rounded="lg" prepend-icon="mdi-shopping" @click="handleAddToCart">
-              Add to Cart
+            <v-btn size="x-large" class="flex-grow-1 text-none" color="primary" rounded="lg" prepend-icon="mdi-shopping" :disabled="product.stock <= 0" @click="handleAddToCart">
+              {{ product.stock > 0 ? "Add to Cart" : "Out of Stock" }}
             </v-btn>
             <v-btn size="x-large" icon variant="outlined" rounded="lg" :color="wishlist ? 'pink' : 'primary'" @click="wishlist = !wishlist">
               <v-icon :icon="wishlist ? 'mdi-heart' : 'mdi-heart-outline'" />
@@ -148,21 +152,25 @@ import { ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import SimpleHeader from "@/components/SimpleHeader.vue";
 import ProductCard from "@/components/ProductCard.vue";
-import { getProductById, allProducts } from "@/data/products";
 import { useCartStore } from "@/store/cart";
+import { useProductsStore } from "@/store/products";
 
 const route = useRoute();
 const router = useRouter();
 const cart = useCartStore();
+const productsStore = useProductsStore();
 
-const product = computed(() => getProductById(route.params.id));
-const images = computed(() => (product.value ? [product.value.image, product.value.image2] : []));
+const product = computed(() => {
+  const p = productsStore.byId(route.params.id);
+  return p && p.visible !== false ? p : null;
+});
+const images = computed(() => (product.value ? [product.value.image, product.value.image2].filter(Boolean) : []));
 const activeImg = ref(0);
 const wishlist = ref(false);
 
 const related = computed(() => {
   if (!product.value) return [];
-  return allProducts.filter((p) => p.category === product.value.category && p.id !== product.value.id).slice(0, 3);
+  return productsStore.visible.filter((p) => p.category === product.value.category && p.id !== product.value.id).slice(0, 3);
 });
 
 const stockColor = computed(() => {

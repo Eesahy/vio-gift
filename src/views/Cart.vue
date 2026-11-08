@@ -93,12 +93,12 @@
                       variant="outlined" rounded="lg" prepend-icon="mdi-package-variant-closed"
                       :color="giftOption === 'bag' ? 'primary' : undefined"
                       @click="giftOption = giftOption === 'bag' ? '' : 'bag'"
-                    >Gift Bag (+₦5)</v-btn>
+                    >Gift Bag (+₦{{ GIFT_EXTRAS.bag }})</v-btn>
                     <v-btn
                       variant="outlined" rounded="lg" prepend-icon="mdi-gift-outline"
                       :color="giftOption === 'wrap' ? 'primary' : undefined"
                       @click="giftOption = giftOption === 'wrap' ? '' : 'wrap'"
-                    >Gift Wrap (+₦3)</v-btn>
+                    >Gift Wrap (+₦{{ GIFT_EXTRAS.wrap }})</v-btn>
                   </div>
                 </div>
 
@@ -166,14 +166,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import SimpleHeader from "@/components/SimpleHeader.vue";
-import { allProducts } from "@/data/products";
-import { useCartStore } from "@/store/cart";
+import { useCartStore, GIFT_EXTRAS } from "@/store/cart";
+import { useProductsStore } from "@/store/products";
 
 const router = useRouter();
 const cart = useCartStore();
+const productsStore = useProductsStore();
 cart.reload();
 
 const orderNote = ref(cart.orderNote);
@@ -184,14 +185,26 @@ const giftTo = ref("");
 const giftNote = ref("");
 const savedGifting = ref(false);
 
-const upsellItems = allProducts.filter((p) => p.tags.includes("Best Seller")).slice(0, 3);
+const upsellItems = computed(() =>
+  productsStore.visible
+    .filter((p) => p.stock > 0 && (p.tags || []).includes("Best Seller") && !cart.items.some((i) => i.id === p.id))
+    .slice(0, 3)
+);
 
-const giftExtra = computed(() => (giftOption.value === "bag" ? 5 : giftOption.value === "wrap" ? 3 : 0));
+const giftExtra = computed(() => (addGiftExtras.value ? GIFT_EXTRAS[giftOption.value] || 0 : 0));
 const total = computed(() => cart.subtotal + giftExtra.value);
 
 function addUpsell(product) {
   cart.addToCart(product, 1);
 }
+
+// Prices in the cart are only a preview; refresh them from the live catalogue.
+const livePrice = (item) => productsStore.byId(item.id)?.price ?? item.price;
+watch(
+  () => productsStore.items,
+  () => cart.refreshPrices(livePrice),
+  { immediate: true }
+);
 
 function saveGifting() {
   cart.saveGiftingOptions({ giftFrom: giftFrom.value, giftTo: giftTo.value, giftNote: giftNote.value, giftOption: giftOption.value });
@@ -201,6 +214,7 @@ function saveGifting() {
 
 function handleCheckout() {
   cart.setOrderNote(orderNote.value);
+  cart.saveGiftingOptions({ giftFrom: giftFrom.value, giftTo: giftTo.value, giftNote: giftNote.value, giftOption: addGiftExtras.value ? giftOption.value : "" });
   cart.setCartTotal(total.value);
   router.push("/checkout");
 }

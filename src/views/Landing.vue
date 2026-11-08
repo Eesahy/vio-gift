@@ -429,6 +429,7 @@ import { useRouter } from "vue-router";
 import { themeCards, occasionCards } from "@/data/products";
 import { useCartStore } from "@/store/cart";
 import { todayKey, formatDateKey } from "@/store/admin";
+import { whatsappLink } from "@/data/nigeria";
 
 const router = useRouter();
 const cart = useCartStore();

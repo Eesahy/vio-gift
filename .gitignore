@@ -3,3 +3,10 @@ dist
 .DS_Store
 *.local
 .env
+!functions/.env
+.secret.local
+.firebase
+*-debug.log
+firepit-log.txt
+service-account*.json
+functions/node_modules

@@ -1,5 +1,8 @@
 import { defineStore } from "pinia";
 
+// Must match GIFT_EXTRAS in functions/index.js, which is what customers are actually charged.
+export const GIFT_EXTRAS = { bag: 5, wrap: 3 };
+
 function readCart() {
   try {
     return JSON.parse(sessionStorage.getItem("cart") || "[]");
@@ -14,7 +17,6 @@ export const useCartStore = defineStore("cart", {
     orderNote: sessionStorage.getItem("orderNote") || "",
     cartTotal: Number(sessionStorage.getItem("cartTotal") || 0),
     giftingOptions: JSON.parse(sessionStorage.getItem("giftingOptions") || "null"),
-    orderDetails: JSON.parse(sessionStorage.getItem("orderDetails") || "null"),
     // "YYYY-MM-DD" chosen via "Book a Gift for Later"; prefills the checkout date.
     bookingDate: sessionStorage.getItem("bookingDate") || "",
   }),
@@ -36,9 +38,21 @@ export const useCartStore = defineStore("cart", {
       if (existing) {
         existing.quantity += qty;
       } else {
-        this.items.push({ ...product, quantity: qty });
+        const { id, name, price, image, description } = product;
+        this.items.push({ id, name, price, image, description, quantity: qty });
       }
       this.persist();
+    },
+    refreshPrices(priceOf) {
+      let changed = false;
+      this.items.forEach((i) => {
+        const price = priceOf(i);
+        if (price !== i.price) {
+          i.price = price;
+          changed = true;
+        }
+      });
+      if (changed) this.persist();
     },
     updateQty(id, delta) {
       this.items = this.items
@@ -62,10 +76,6 @@ export const useCartStore = defineStore("cart", {
       this.cartTotal = total;
       sessionStorage.setItem("cartTotal", String(total));
     },
-    setOrderDetails(details) {
-      this.orderDetails = details;
-      sessionStorage.setItem("orderDetails", JSON.stringify(details));
-    },
     setBookingDate(date) {
       this.bookingDate = date || "";
       if (date) sessionStorage.setItem("bookingDate", date);
@@ -73,8 +83,10 @@ export const useCartStore = defineStore("cart", {
     },
     clearAfterOrder() {
       this.items = [];
-      sessionStorage.removeItem("cart");
-      sessionStorage.removeItem("cartTotal");
+      this.cartTotal = 0;
+      this.giftingOptions = null;
+      this.orderNote = "";
+      ["cart", "cartTotal", "giftingOptions", "orderNote"].forEach((k) => sessionStorage.removeItem(k));
       this.setBookingDate("");
     },
   },
